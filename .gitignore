@@ -1,0 +1,24 @@
+# Gradle
+.gradle/
+build/
+
+# Kotlin LSP (local tooling, not project source)
+.lsp/
+
+# IntelliJ / Android Studio
+.idea/
+*.iml
+local.properties
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Android (future)
+*.apk
+*.aab
+*.keystore
+*.jks
