@@ -22,6 +22,7 @@ import java.util.LinkedHashSet
 
 class FakeSongRepository(
     initialSongs: List<SongInfo> = emptyList(),
+    private val metadata: List<matchsong.core.model.song.SongMetadata> = emptyList(),
 ) : SongRepository {
     private val songs = mutableMapOf<String, SongInfo>()
 
@@ -32,6 +33,9 @@ class FakeSongRepository(
     override suspend fun getAll(): List<SongInfo> = songs.values.sortedBy { it.songId }
 
     override suspend fun getById(songId: String): SongInfo? = songs[songId]
+
+    /** 完整元数据（M7 推荐引擎测试注入）。 */
+    override suspend fun getAllMetadata(): List<matchsong.core.model.song.SongMetadata> = metadata
 
     fun add(song: SongInfo) {
         songs[song.songId] = song

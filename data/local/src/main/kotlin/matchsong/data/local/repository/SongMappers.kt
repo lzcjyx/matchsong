@@ -42,6 +42,34 @@ internal fun List<SongMetadata>.toEntities(fallbackBatchId: String): List<SongMe
         )
     }
 
+/** Room 实体 → 完整 SongMetadata（推荐引擎输入，M7）。 */
+internal fun SongMetadataEntity.toSongMetadata(): SongMetadata =
+    SongMetadata(
+        songId = songId,
+        title = title,
+        artist = artist,
+        language = language,
+        genre = genre,
+        originalKeyMidi = originalKeyMidi,
+        lowestMidi = lowestMidi,
+        highestMidi = highestMidi,
+        tessituraLowMidi = tessituraLowMidi,
+        tessituraHighMidi = tessituraHighMidi,
+        rangeSpanSemitones = rangeSpanSemitones,
+        highNoteBurden = highNoteBurden,
+        longNoteBurden = longNoteBurden,
+        leapDifficulty = leapDifficulty,
+        rhythmDifficulty = rhythmDifficulty,
+        overallDifficulty = overallDifficulty,
+        recommendedKeyShiftMin = recommendedKeyShiftMin,
+        recommendedKeyShiftMax = recommendedKeyShiftMax,
+        audioUrl = audioUrl,
+        dataSource = dataSource,
+        credibility = matchsong.core.model.song.Credibility.valueOf(credibility),
+        dataVersion = dataVersion,
+        importBatchId = importBatchId,
+    )
+
 /**
  * 派生歌曲音域画像（data-model §2.9，导入时冗余存储）。
  *

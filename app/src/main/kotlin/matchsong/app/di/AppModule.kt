@@ -12,6 +12,9 @@ import matchsong.core.audio.android.RecordingFileManager
 import matchsong.data.local.consent.DataStoreConsentRepository
 import matchsong.domain.port.ConsentRepository
 import matchsong.domain.port.RecordingFileCleaner
+import matchsong.domain.port.SettingsRepository
+import matchsong.domain.port.SongRepository
+import matchsong.domain.recommendation.GetRecommendationsUseCase
 import matchsong.domain.recording.CleanupStaleRecordingsUseCase
 import matchsong.domain.usecase.AcceptConsentUseCase
 import matchsong.domain.usecase.GetOnboardingStatusUseCase
@@ -80,4 +83,12 @@ object AppModule {
     @Singleton
     fun provideCleanupStaleRecordingsUseCase(cleaner: RecordingFileCleaner): CleanupStaleRecordingsUseCase =
         CleanupStaleRecordingsUseCase(cleaner)
+
+    /** M7.6-2 推荐用例绑定（歌曲库 + 设置 → 推荐结果）。 */
+    @Provides
+    @Singleton
+    fun provideGetRecommendationsUseCase(
+        songRepo: SongRepository,
+        settingsRepo: SettingsRepository,
+    ): GetRecommendationsUseCase = GetRecommendationsUseCase(songRepo, settingsRepo)
 }

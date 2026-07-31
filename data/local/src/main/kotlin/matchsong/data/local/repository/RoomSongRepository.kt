@@ -34,6 +34,10 @@ class RoomSongRepository
 
         override suspend fun getById(songId: String): SongInfo? = songDao.getById(songId)?.toSongInfo()
 
+        /** 全部歌曲完整元数据（推荐引擎输入，M7）。 */
+        override suspend fun getAllMetadata(): List<matchsong.core.model.song.SongMetadata> =
+            songDao.getAll().map { it.toSongMetadata() }
+
         // ---- M6.4-3 搜索/筛选/音域（M7 候选过滤复用） ----
 
         /** 全量观察（按 songId 排序）。 */
