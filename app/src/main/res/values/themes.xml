@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- M1.1-2 最小主题：Compose 全权负责 UI 渲染，仅保留启动基础样式 -->
+    <style name="Theme.MatchSong" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@android:color/white</item>
+    </style>
+</resources>
