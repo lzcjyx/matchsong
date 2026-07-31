@@ -42,6 +42,8 @@ android {
 
     buildFeatures {
         compose = true
+        // AndroidLogger 的 Debug/Release 分支（ARCHITECTURE.md §13，FR-PRIV-4）需要 BuildConfig.DEBUG
+        buildConfig = true
     }
 }
 

@@ -1,0 +1,16 @@
+# EditorConfig（Ktlint 风格基础，M1.2-1）
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{kt,kts}]
+indent_style = space
+indent_size = 4
+max_line_length = 120
+
+# Compose 惯例：@Composable/@Preview 函数使用 PascalCase（AppScaffold/MatchSongTheme）
+ktlint_function_naming_ignore_when_annotated_with = Composable, Preview

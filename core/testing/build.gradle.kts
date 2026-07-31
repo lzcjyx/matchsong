@@ -28,7 +28,11 @@ dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:common"))
     implementation(project(":core:audio"))
+    // FakeRepositories 实现 domain Port 接口（M1.4-5）
+    implementation(project(":domain"))
     implementation(libs.kotlinx.coroutines.core)
+    // TestDispatcherProvider（main source set 测试工具）需要 coroutines-test；整个模块仅 debug/test 引入，不进 Release
+    implementation(libs.kotlinx.coroutines.test)
 
     testImplementation(libs.junit5.api)
     testImplementation(libs.junit5.engine)

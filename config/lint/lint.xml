@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Android Lint 配置（M1.2-1）
+     规则裁剪原则：禁用规则必须在此注释理由；不允许静默关闭掩盖问题。 -->
+<lint>
+    <!-- Compose 模块中 preview 使用 tooling 依赖，属正常 -->
+    <issue id="UnusedResources" severity="warning" />
+    <!-- 占位资源（M1 阶段图标）允许未使用 -->
+    <issue id="GradleDependency" severity="warning" />
+</lint>

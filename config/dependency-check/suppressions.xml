@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- OWASP Dependency-Check 漏洞抑制文件（M1.2-3）
+     抑制规则必须在此文件注释理由，禁止掩盖未评估的漏洞。 -->
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+</suppressions>

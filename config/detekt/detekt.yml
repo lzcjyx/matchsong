@@ -1,0 +1,91 @@
+# Detekt 配置（M1.2-1）
+# 规则裁剪原则：架构违规必须报错；纯风格规则允许适度放宽；豁免必须在此注释理由。
+
+build:
+  maxIssues: 0
+
+config:
+  validation: true
+  warningsAsErrors: true
+
+processors:
+  active: true
+
+console-reports:
+  active: true
+
+output-reports:
+  active: true
+
+style:
+  MaxLineLength:
+    active: true
+    maxLineLength: 120
+  MagicNumber:
+    active: false
+  ReturnCount:
+    active: false
+  ForbiddenComment:
+    active: false
+  NewLineAtEndOfFile:
+    active: false
+  UnusedPrivateMember:
+    active: true
+    ignoreAnnotated:
+      - "Preview"
+
+complexity:
+  LongMethod:
+    active: true
+    threshold: 80
+  TooManyFunctions:
+    active: true
+    thresholdInFiles: 20
+    thresholdInClasses: 20
+  CyclomaticComplexMethod:
+    active: true
+    threshold: 15
+  # WavTestFileFactory 为测试夹具工厂：10 个参数全部为 WAV 生成配置（时长/频率/幅值/削波/采样率/声道/位深/种子），
+  # 引入配置对象反而降低测试可读性；此处豁免并在工厂 KDoc 注明（工具模块，非生产 API）
+  LongParameterList:
+    active: true
+    ignoreAnnotated:
+      - "JvmOverloads"
+    ignoreDefaultParameters: true
+    functionThreshold: 10
+    constructorThreshold: 10
+
+coroutines:
+  GlobalCoroutineUsage:
+    active: true
+
+exceptions:
+  TooGenericExceptionCaught:
+    active: false
+  PrintStackTrace:
+    active: true
+  SwallowedException:
+    active: true
+    ignoredExceptionTypes:
+      - "InterruptedException"
+
+potential-bugs:
+  EqualsAlwaysReturnsTrueOrFalse:
+    active: true
+  UnconditionalJumpStatementInLoop:
+    active: true
+  UnusedUnaryOperator:
+    active: true
+  DontDowncastCollectionTypes:
+    active: false
+
+naming:
+  # Compose 惯例：@Composable 函数使用 PascalCase（AppScaffold/MatchSongTheme）
+  # 与默认 [a-z][a-zA-Z0-9]* 冲突；@Preview 函数在 IDE 预览中使用，非 dead code
+  FunctionNaming:
+    active: true
+    ignoreAnnotated:
+      - "Composable"
+      - "Preview"
+
+# 架构规则：禁止空 catch（SwallowedException 已覆盖）；禁止 println（PrintStackTrace 覆盖 stacktrace，println 用风格规则）

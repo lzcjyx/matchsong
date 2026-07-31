@@ -682,6 +682,8 @@ Task ID
 
 ### M1.1 初始化工程配置
 
+**状态：** `DONE`（2026-07-31，8 模块 Gradle 工程 + Version Catalog + wrapper 8.9；Debug/Release 构建成功；模拟器冒烟通过）
+
 配置：
 
 - Kotlin；
@@ -705,6 +707,8 @@ Task ID
 
 ### M1.2 建立代码质量工具
 
+**状态：** `DONE`（2026-07-31，Lint/Detekt/Ktlint 统一 checkQuality 命令 + JaCoCo 覆盖率门禁 + 依赖版本检查/漏洞扫描）
+
 配置：
 
 - Android Lint；
@@ -724,6 +728,8 @@ Task ID
 ---
 
 ### M1.3 建立 CI
+
+**状态：** `DONE`（2026-07-31，.github/workflows/ci.yml：PR 必选五项 + 覆盖率门禁 + 模拟器 job + Release + 依赖扫描）
 
 CI 至少执行：
 
@@ -752,6 +758,8 @@ ktlintCheck
 
 ### M1.4 建立通用基础设施
 
+**状态：** `DONE`（2026-07-31，OperationResult/AppError/DispatcherProvider/Clock/Logger+脱敏/core:testing 工具/Fake 工厂；55 个单元测试通过）
+
 实现：
 
 - 统一错误模型；
@@ -767,6 +775,8 @@ ktlintCheck
 ---
 
 ### M1.5 建立目录与文档
+
+**状态：** `DONE`（2026-07-31，docs/bugs/bug-log.md、M1-acceptance.md 模板、README/CHANGELOG/PRIVACY/SECURITY）
 
 创建：
 
