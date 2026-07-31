@@ -1,0 +1,9 @@
+{
+  "id": "FIX-NOISE-WHITE",
+  "type": "synthetic",
+  "format": "44.1k/16bit/mono",
+  "durationSec": 2.0,
+  "seed": 42,
+  "source": "FixtureGeneratorTest (M4.6-1)",
+  "expected": "见 test-fixture-manifest.md §2.1"
+}

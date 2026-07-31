@@ -38,6 +38,7 @@ import matchsong.app.feature.voice.VoiceResultScreen
  * Prepare→Recording→QualityResult→Analyzing→VoiceResult→RecommendationList，
  * "重新录制"= popUpTo(Prepare)。
  */
+@Suppress("LongMethod") // 路由注册为声明式清单，逐路由拆分会破坏可读性（M2.1-1 决策）
 @Composable
 fun AppNavHost(
     navController: NavHostController,
@@ -87,7 +88,12 @@ fun AppNavHost(
             RecordingScreen(onFinished = { navController.navigate(Routes.QUALITY_RESULT) { popUpTo(Routes.PREPARE) } })
         }
         composable(Routes.QUALITY_RESULT) {
-            QualityResultScreen(onAnalyze = { navController.navigate(Routes.ANALYZING) { popUpTo(Routes.RECORDING) } })
+            // M4.5：占位报告（演示可分析状态）；M8.1 接入真实录音质量管线
+            QualityResultScreen(
+                report = matchsong.app.feature.quality.DemoQualityReport,
+                onAnalyze = { navController.navigate(Routes.ANALYZING) { popUpTo(Routes.RECORDING) } },
+                onRetry = { navController.navigate(Routes.PREPARE) { popUpTo(Routes.RECORDING) } },
+            )
         }
         composable(Routes.ANALYZING) {
             AnalyzingScreen(onDone = { navController.navigate(Routes.VOICE_RESULT) { popUpTo(Routes.QUALITY_RESULT) } })
