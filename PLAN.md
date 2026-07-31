@@ -249,7 +249,7 @@ M6 的部分数据准备工作可以与 M4、M5 并行，但不得影响音频�
 
 ### M-1.1 仓库审计
 
-**状态：** `NOT_STARTED`
+**状态：** `DONE`（2026-07-30，交付 docs/research/repository-audit.md）
 
 检查：
 
@@ -283,7 +283,7 @@ docs/research/repository-audit.md
 
 ### M-1.2 学术与技术研究
 
-**状态：** `NOT_STARTED`
+**状态：** `DONE`（2026-07-30，交付 docs/research/academic-research.md、android-technical-feasibility.md、source-register.md）
 
 研究：
 
@@ -319,7 +319,7 @@ docs/research/source-register.md
 
 ### M-1.3 竞品研究
 
-**状态：** `NOT_STARTED`
+**状态：** `DONE`（2026-07-30，交付 docs/research/competitor-research.md、product-opportunities.md）
 
 调查：
 
@@ -352,7 +352,7 @@ docs/research/product-opportunities.md
 
 ### M-1.4 AudioRecord 与 MediaRecorder Spike
 
-**状态：** `NOT_STARTED`
+**状态：** `BLOCKED`（2026-07-30，代码与编译验证完成，交付 experiments/audio-record/ 与 docs/experiments/audio-recording-spike-results.md；真机运行验证因开发机无设备/AVD 受阻，需设备环境后解除）
 
 分别实现最小实验：
 
@@ -385,7 +385,7 @@ experiments/media-recorder/
 
 ### M-1.5 音高检测 Spike
 
-**状态：** `NOT_STARTED`
+**状态：** `DONE`（2026-07-30，交付 experiments/pitch-detection/ 与 docs/experiments/pitch-detection-results.md；真实人声验证列为遗留风险，待 M1 后补测）
 
 比较：
 
@@ -435,7 +435,7 @@ docs/experiments/pitch-detection-results.md
 
 ### M-1.6 MVP 技术决策
 
-**状态：** `NOT_STARTED`
+**状态：** `DONE`（2026-07-30，交付 docs/experiments/spike-results.md、mvp-technical-decision.md 与 docs/decisions/ADR-001..003）
 
 比较三种方向：
 

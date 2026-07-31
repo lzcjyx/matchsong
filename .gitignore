@@ -9,6 +9,7 @@ build/
 .idea/
 *.iml
 local.properties
+**/local.properties
 
 # OS
 .DS_Store
