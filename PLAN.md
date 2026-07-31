@@ -490,7 +490,7 @@ docs/decisions/ADR-003-pitch-detection-method.md
 
 ### M0.1 编写 SPEC
 
-**状态：** `NOT_STARTED`
+**状态：** `DONE`（2026-07-31，交付 SPEC.md v0.1.0，含 17 条 Given/When/Then 验收条件）
 
 创建：
 
@@ -524,7 +524,7 @@ SPEC.md
 
 ### M0.2 编写架构文档
 
-**状态：** `NOT_STARTED`
+**状态：** `DONE`（2026-07-31，交付 ARCHITECTURE.md，8 个真实 Gradle 模块 + 逻辑边界）
 
 创建：
 
@@ -574,7 +574,7 @@ feature:settings
 
 ### M0.3 定义数据模型
 
-**状态：** `NOT_STARTED`
+**状态：** `DONE`（2026-07-31，交付 docs/architecture/data-model.md，15 个模型 × 9 项字段属性）
 
 至少定义：
 
@@ -609,7 +609,7 @@ feature:settings
 
 ### M0.4 建立测试策略
 
-**状态：** `NOT_STARTED`
+**状态：** `DONE`（2026-07-31，交付 TESTING.md + docs/testing/ 4 份文档）
 
 创建：
 
@@ -635,7 +635,7 @@ docs/testing/regression-suite.md
 
 ### M0.5 细化剩余任务
 
-**状态：** `NOT_STARTED`
+**状态：** `DONE`（2026-07-31，交付 docs/plans/task-breakdown.md，126 个里程碑任务 + 16 个 Backlog 任务）
 
 Coding Agent 根据最终 SPEC，对本计划中的任务进行二次细化。
 
