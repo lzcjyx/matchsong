@@ -8,7 +8,37 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import matchsong.core.model.song.Credibility
 import matchsong.core.model.song.SongMetadata
+import matchsong.data.local.db.entity.AnalysisHistoryEntity
 import matchsong.data.local.db.entity.SongMetadataEntity
+import matchsong.domain.analysis.ConfidenceLevel
+
+/** 测试用历史摘要实体工厂（字段默认值覆盖 M8.4 常规场景）。 */
+internal fun analysisHistoryEntity(
+    historyId: String = "history-1",
+    createdAtMs: Long = 1_000,
+    stableLowestMidi: Double? = 48.0,
+    stableHighestMidi: Double? = 69.0,
+    comfortLowestMidi: Double? = 52.0,
+    comfortHighestMidi: Double? = 64.0,
+    confidenceLevel: String = ConfidenceLevel.HIGH.name,
+    algorithmVersion: String = "1.0.0",
+    recommendationRefsJson: String? = null,
+    voicedFrameCount: Int = 500,
+    qualityUsable: Boolean = true,
+): AnalysisHistoryEntity =
+    AnalysisHistoryEntity(
+        historyId = historyId,
+        createdAtMs = createdAtMs,
+        stableLowestMidi = stableLowestMidi,
+        stableHighestMidi = stableHighestMidi,
+        comfortLowestMidi = comfortLowestMidi,
+        comfortHighestMidi = comfortHighestMidi,
+        confidenceLevel = confidenceLevel,
+        algorithmVersion = algorithmVersion,
+        recommendationRefsJson = recommendationRefsJson,
+        voicedFrameCount = voicedFrameCount,
+        qualityUsable = qualityUsable,
+    )
 
 /** 测试用歌曲实体工厂（字段默认值覆盖 M6.4 测试常规场景）。 */
 internal fun songEntity(

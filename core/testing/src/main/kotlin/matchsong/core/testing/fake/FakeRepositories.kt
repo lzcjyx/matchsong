@@ -1,5 +1,8 @@
 package matchsong.core.testing.fake
 
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import matchsong.domain.port.AnalysisHistoryRepository
 import matchsong.domain.port.AnalysisSummary
 import matchsong.domain.port.ConsentRepository
@@ -50,32 +53,35 @@ class FakeSongRepository(
     }
 }
 
-/** 内存实现分析历史仓库（确定性排序：按分析时间倒序，再按 analysisId）。 */
+/** 内存实现分析历史仓库（确定性排序：按分析时间倒序，再按 analysisId；M8.4-2 观察流实时同步）。 */
 class FakeAnalysisHistoryRepository(
     initialItems: List<AnalysisSummary> = emptyList(),
 ) : AnalysisHistoryRepository {
-    private val items = mutableMapOf<String, AnalysisSummary>()
+    private val items =
+        MutableStateFlow(
+            initialItems.sortedWith(compareByDescending<AnalysisSummary> { it.analyzedAtMs }.thenBy { it.analysisId }),
+        )
 
-    init {
-        initialItems.forEach { items[it.analysisId] = it }
-    }
+    override suspend fun getAll(): List<AnalysisSummary> = items.value
 
-    override suspend fun getAll(): List<AnalysisSummary> =
-        items.values.sortedWith(compareByDescending<AnalysisSummary> { it.analyzedAtMs }.thenBy { it.analysisId })
-
-    override suspend fun getById(analysisId: String): AnalysisSummary? = items[analysisId]
+    override suspend fun getById(analysisId: String): AnalysisSummary? =
+        items.value.firstOrNull { it.analysisId == analysisId }
 
     override suspend fun add(summary: AnalysisSummary) {
-        items[summary.analysisId] = summary
+        items.value =
+            (items.value.filterNot { it.analysisId == summary.analysisId } + summary)
+                .sortedWith(compareByDescending<AnalysisSummary> { it.analyzedAtMs }.thenBy { it.analysisId })
     }
 
     override suspend fun delete(analysisId: String) {
-        items.remove(analysisId)
+        items.value = items.value.filterNot { it.analysisId == analysisId }
     }
 
     override suspend fun clear() {
-        items.clear()
+        items.value = emptyList()
     }
+
+    override fun observeHistory(): Flow<List<AnalysisSummary>> = items.asStateFlow()
 }
 
 /** 内存实现设置/Onboarding 仓库。 */
@@ -98,39 +104,58 @@ class FakeSettingsRepository(
     }
 }
 
-/** 内存实现收藏仓库（确定性：插入序）。 */
+/**
+ * 内存实现收藏仓库（确定性：插入序）。
+ *
+ * 状态经 MutableStateFlow 暴露（M8.3-1 Port 扩展）：add/remove/toggle/clear
+ * 同步更新 Flow，订阅方实时收到收藏状态变更（单线程测试约定）。
+ */
 class FakeFavoritesRepository(
     initialSongIds: List<String> = emptyList(),
 ) : FavoritesRepository {
-    private val favorites: MutableSet<String> = LinkedHashSet(initialSongIds)
+    private val favoritesState: MutableStateFlow<Set<String>> = MutableStateFlow(LinkedHashSet(initialSongIds))
 
-    override suspend fun getAll(): List<String> = favorites.toList()
+    override suspend fun getAll(): List<String> = favoritesState.value.toList()
 
-    override suspend fun isFavorite(songId: String): Boolean = favorites.contains(songId)
+    override fun observeFavoriteSongIds(): Flow<Set<String>> = favoritesState.asStateFlow()
+
+    override suspend fun isFavorite(songId: String): Boolean = songId in favoritesState.value
 
     override suspend fun add(songId: String) {
-        favorites.add(songId)
+        favoritesState.value = favoritesState.value + songId
     }
 
     override suspend fun remove(songId: String) {
-        favorites.remove(songId)
+        favoritesState.value = favoritesState.value - songId
+    }
+
+    override suspend fun toggle(songId: String) {
+        if (isFavorite(songId)) remove(songId) else add(songId)
     }
 
     override suspend fun clear() {
-        favorites.clear()
+        favoritesState.value = emptySet()
     }
 }
 
-/** 内存实现反馈仓库。 */
+/** 内存实现反馈仓库（与 Room 实现一致的重复提交更新语义，M8.5-1）。 */
 class FakeFeedbackRepository(
     initialItems: List<FeedbackItem> = emptyList(),
 ) : FeedbackRepository {
     private val items = mutableListOf<FeedbackItem>().apply { addAll(initialItems) }
 
-    override suspend fun getAll(): List<FeedbackItem> = items.toList()
+    override suspend fun getAll(): List<FeedbackItem> =
+        // 与 Room 实现一致：按提交时间倒序，再按 feedbackId（确定性排序）
+        items.sortedWith(compareByDescending<FeedbackItem> { it.createdAtMs }.thenBy { it.feedbackId })
 
     override suspend fun submit(feedback: FeedbackItem) {
-        items.add(feedback)
+        val existing =
+            items.indexOfFirst { it.resultId == feedback.resultId && it.songId == feedback.songId }
+        if (existing >= 0) {
+            items[existing] = feedback
+        } else {
+            items.add(feedback)
+        }
     }
 
     override suspend fun clear() {

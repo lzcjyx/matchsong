@@ -6,12 +6,16 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import matchsong.core.audio.algorithm.QualityAnalyzer
+import matchsong.core.audio.analysis.AnalyzeRecordingUseCase
 import matchsong.core.audio.android.AndroidAudioRecorder
 import matchsong.core.audio.android.AndroidRecordingPort
+import matchsong.core.audio.android.RecordingFileManager
 import matchsong.core.audio.android.RecordingSessionRunner
 import matchsong.core.audio.api.AudioRecorder
 import matchsong.domain.recording.PermissionStateMachine
 import matchsong.domain.recording.RecordingPort
+import java.io.File
 import javax.inject.Singleton
 
 /**
@@ -31,8 +35,11 @@ object AudioModule {
 
     @Provides
     @Singleton
-    fun provideRecordingSessionRunner(recorder: AudioRecorder): RecordingSessionRunner =
-        RecordingSessionRunner(recorder).also { RecordingSessionRunner.instance = it }
+    fun provideRecordingSessionRunner(
+        recorder: AudioRecorder,
+        fileManager: RecordingFileManager,
+    ): RecordingSessionRunner =
+        RecordingSessionRunner(recorder, fileManager).also { RecordingSessionRunner.instance = it }
 
     @Provides
     @Singleton
@@ -43,4 +50,21 @@ object AudioModule {
 
     @Provides
     fun providePermissionStateMachine(): PermissionStateMachine = PermissionStateMachine()
+
+    /** M8.1-1 质量检测器（QualityResultViewModel 消费）。 */
+    @Provides
+    @Singleton
+    fun provideQualityAnalyzer(): QualityAnalyzer = QualityAnalyzer()
+
+    /** M8.1-1 分析用例（AnalyzingViewModel 消费）。 */
+    @Provides
+    @Singleton
+    fun provideAnalyzeRecordingUseCase(): AnalyzeRecordingUseCase = AnalyzeRecordingUseCase()
+
+    /** 录音文件管理（M8.1-1：runner 落盘 + Cleanup 实现共用实例）。 */
+    @Provides
+    @Singleton
+    fun provideRecordingFileManager(
+        @ApplicationContext context: Context,
+    ): RecordingFileManager = RecordingFileManager(File(context.cacheDir, RecordingFileManager.RECORDINGS_DIR_NAME))
 }

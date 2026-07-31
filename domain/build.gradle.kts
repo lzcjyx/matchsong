@@ -29,6 +29,8 @@ dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:common"))
     implementation(libs.kotlinx.coroutines.core)
+    // RecommendationRefs 历史推荐引用序列化（M8.4-1）
+    implementation(libs.kotlinx.serialization.json)
 
     testImplementation(libs.junit5.api)
     testImplementation(libs.junit5.params)

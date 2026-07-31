@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import matchsong.core.audio.algorithm.VolumeMeter
 import matchsong.core.audio.algorithm.throttledVolume
@@ -38,6 +39,7 @@ import matchsong.domain.recording.VolumeLevel
  */
 class RecordingSessionRunner(
     private val recorder: AudioRecorder,
+    private val fileManager: RecordingFileManager? = null,
 ) : RecordingPort {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -53,6 +55,16 @@ class RecordingSessionRunner(
     private var sessionJob: Job? = null
     private var startTimeMs: Long = 0
     private var config: RecordingConfig = RecordingConfig()
+
+    /** 当前会话 PCM 输出流（M8.1-1：录音落盘 → 分析消费）。 */
+    private var pcmSink: java.io.DataOutputStream? = null
+    private var sessionId: String = ""
+    private var pcmFile: java.io.File? = null
+
+    /** 录音完成后的 WAV 文件（quality/analysis 消费，M8.1-1）。 */
+    @Volatile
+    var lastWavFile: java.io.File? = null
+        private set
 
     /** 静态引用：供 Service 无 DI 场景访问（app 装配时由 Hilt 设置）。 */
     companion object {
@@ -100,11 +112,67 @@ class RecordingSessionRunner(
     }
 
     private suspend fun collectFrames() {
-        // 音量计算与节流统一走集中配置（M3.6-1，data-model §5.1；禁止散落阈值）
+        // M8.1-1：录音落盘（sessionId.pcm）→ 供质量/分析消费；音量节流输出（M3.6-1）
+        openPcmSink()
         recorder.frames
+            .onEach { chunk ->
+                // 写 PCM（float → short → little-endian）
+                pcmSink?.let { sink ->
+                    for (v in chunk.samples) {
+                        val sample = (v * 32767).toInt().coerceIn(-32768, 32767)
+                        sink.writeByte(sample and 0xFF)
+                        sink.writeByte((sample shr 8) and 0xFF)
+                    }
+                }
+            }
             .map { chunk -> VolumeMeter().computeVolume(chunk) }
             .throttledVolume(THROTTLE_MS)
             .collect { level -> _volumeFlow.tryEmit(level) }
+        closePcmSink()
+    }
+
+    /** 创建会话 PCM 文件（cacheDir/recordings/{sessionId}.pcm）。 */
+    private fun openPcmSink() {
+        try {
+            sessionId = java.util.UUID.randomUUID().toString()
+            val manager = fileManager
+            if (manager != null) {
+                when (val created = manager.createSessionFiles(sessionId)) {
+                    is matchsong.core.common.result.OperationResult.Success -> {
+                        pcmFile = created.data
+                        pcmSink = java.io.DataOutputStream(pcmFile!!.outputStream())
+                    }
+                    is matchsong.core.common.result.OperationResult.Failure -> {
+                        Log.e(TAG, "创建 PCM 文件失败：${created.error}")
+                        pcmSink = null
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "打开 PCM 输出失败（录音继续但不落盘）", e)
+            pcmSink = null
+        }
+    }
+
+    private fun closePcmSink() {
+        try {
+            pcmSink?.flush()
+            pcmSink?.close()
+        } catch (e: Exception) {
+            Log.e(TAG, "关闭 PCM 输出失败", e)
+        } finally {
+            pcmSink = null
+        }
+    }
+
+    /** 录音完成：PCM → WAV（质量/分析消费）。 */
+    private fun finalizeWav() {
+        val manager = fileManager ?: return
+        when (val result = manager.finalizeWav(sessionId)) {
+            is matchsong.core.common.result.OperationResult.Success -> lastWavFile = result.data
+            is matchsong.core.common.result.OperationResult.Failure ->
+                Log.e(TAG, "WAV 封装失败：${result.error}")
+        }
     }
 
     override fun startRecording() {
@@ -133,6 +201,8 @@ class RecordingSessionRunner(
         sessionJob?.cancel()
         stateMachine.onEvent(RecordingEvent.Stopped)
         _stateFlow.value = RecordingState.COMPLETED
+        closePcmSink()
+        finalizeWav() // M8.1-1：完成 → WAV 供质量/分析
         focusManager?.abandonFocus()
     }
 

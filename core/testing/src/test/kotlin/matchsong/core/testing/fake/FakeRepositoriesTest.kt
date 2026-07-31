@@ -3,6 +3,7 @@ package matchsong.core.testing.fake
 import kotlinx.coroutines.test.runTest
 import matchsong.domain.port.AnalysisSummary
 import matchsong.domain.port.FeedbackItem
+import matchsong.domain.port.FeedbackType
 import matchsong.domain.port.SongInfo
 import matchsong.domain.port.UserSettings
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -93,12 +94,54 @@ class FakeRepositoriesTest {
     // ---- FakeFeedbackRepository ----
 
     @Test
-    fun `反馈仓库提交与清空`() =
+    fun `反馈仓库提交查询清空与重复提交更新`() =
         runTest {
             val repo = FakeFeedbackRepository()
-            repo.submit(FeedbackItem("f1", "a1", "song-1", "TOO_HIGH", createdAtMs = 100))
-            repo.submit(FeedbackItem("f2", "a1", "song-2", "FIT", createdAtMs = 200))
-            assertEquals(listOf("f1", "f2"), repo.getAll().map { it.feedbackId })
+            repo.submit(
+                FeedbackItem(
+                    feedbackId = "f1",
+                    resultId = "result-1",
+                    songId = "song-1",
+                    feedbackType = FeedbackType.TOO_HIGH,
+                    createdAtMs = 100,
+                    appVersion = "0.1.0",
+                ),
+            )
+            // 同一 resultId+songId 重复提交 → 更新原记录（不新增）
+            repo.submit(
+                FeedbackItem(
+                    feedbackId = "f2",
+                    resultId = "result-1",
+                    songId = "song-1",
+                    feedbackType = FeedbackType.SUITABLE,
+                    createdAtMs = 200,
+                    appVersion = "0.1.0",
+                ),
+            )
+            assertEquals(listOf("f2"), repo.getAll().map { it.feedbackId })
+            assertEquals(FeedbackType.SUITABLE, repo.getAll().single().feedbackType)
+            // resultId 为 null 时仅按 songId 匹配，同样走更新
+            repo.submit(
+                FeedbackItem(
+                    feedbackId = "f3",
+                    resultId = null,
+                    songId = "song-2",
+                    feedbackType = FeedbackType.TOO_HARD,
+                    createdAtMs = 300,
+                    appVersion = "0.1.0",
+                ),
+            )
+            repo.submit(
+                FeedbackItem(
+                    feedbackId = "f4",
+                    resultId = null,
+                    songId = "song-2",
+                    feedbackType = FeedbackType.DISLIKE_STYLE,
+                    createdAtMs = 400,
+                    appVersion = "0.1.0",
+                ),
+            )
+            assertEquals(listOf("f4", "f2"), repo.getAll().map { it.feedbackId })
             repo.clear()
             assertTrue(repo.getAll().isEmpty())
         }

@@ -16,7 +16,7 @@ import matchsong.app.design.components.AppTopBar
 import matchsong.app.design.components.SongCard
 import matchsong.app.design.components.state.EmptyState
 
-/** M2.4-2 测试数据（M7 推荐引擎接入后替换；debug 构建明确标记）。 */
+/** M2.4-2 测试数据（详情页演示用；推荐列表已接真实引擎 M8.2-1）。 */
 data class FakeSong(val id: String, val title: String, val artist: String, val note: String)
 
 val FakeSongs =
@@ -27,35 +27,61 @@ val FakeSongs =
     )
 
 /**
- * M7 推荐列表页（M2 阶段用 Fake 数据演示全流程）。
+ * M8.2-1 推荐列表页（真实引擎数据：分数 + 解释 + 变调建议，ACC-11）。
  */
 @Composable
 fun RecommendationListScreen(
+    state: RecommendationListViewModel.UiState,
     onSongClick: (String) -> Unit,
+    onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         AppTopBar(title = "推荐歌曲")
-        Text(
-            text = "测试数据（M2 演示，M7 接入真实推荐引擎）",
-            style = MaterialTheme.typography.labelSmall,
-            color = Color.Gray,
-            modifier = Modifier.padding(horizontal = MatchSongSpacing.M),
-        )
-        if (FakeSongs.isEmpty()) {
-            EmptyState(text = "暂无匹配的歌曲", actionText = "重新测试", onAction = {})
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(MatchSongSpacing.M),
-                verticalArrangement = Arrangement.spacedBy(MatchSongSpacing.S),
-            ) {
-                items(FakeSongs, key = { it.id }) { song ->
-                    SongCard(
-                        title = song.title,
-                        subtitle = "${song.artist} · ${song.note}",
-                        onClick = { onSongClick(song.id) },
+        when (state) {
+            RecommendationListViewModel.UiState.Idle -> Unit
+            RecommendationListViewModel.UiState.Loading ->
+                matchsong.app.design.components.state.LoadingState(text = "正在生成推荐…")
+            is RecommendationListViewModel.UiState.Error ->
+                matchsong.app.design.components.state.ErrorState(
+                    message = state.message,
+                    onRetry = onRetry,
+                )
+            is RecommendationListViewModel.UiState.Success -> {
+                val result = state.result
+                if (result.recommendations.isEmpty()) {
+                    EmptyState(
+                        text = result.emptyStateReason ?: "暂无匹配的歌曲",
+                        actionText = "重新测试",
+                        onAction = onRetry,
                     )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(MatchSongSpacing.M),
+                        verticalArrangement = Arrangement.spacedBy(MatchSongSpacing.S),
+                    ) {
+                        items(result.recommendations, key = { it.song.songId }) { item ->
+                            SongCard(
+                                title = item.song.title,
+                                subtitle =
+                                    buildString {
+                                        append(item.song.artist)
+                                        append(" · 匹配度 ${item.score.toInt()}%")
+                                        item.keyShiftSemitones?.let { shift ->
+                                            append(if (shift < 0) " · 建议降 ${-shift} 半音" else " · 建议升 $shift 半音")
+                                        }
+                                    },
+                                onClick = { onSongClick(item.song.songId) },
+                            ) {
+                                Text(
+                                    text = item.explanation.firstOrNull() ?: "",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.Gray,
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }

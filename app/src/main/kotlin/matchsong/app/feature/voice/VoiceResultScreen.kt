@@ -35,8 +35,12 @@ import matchsong.domain.analysis.VoiceAnalysisResult
 fun VoiceResultScreen(
     onSeeRecommendations: () -> Unit,
     onRetry: () -> Unit,
-    result: VoiceAnalysisResult = DemoVoiceResult,
+    result: VoiceAnalysisResult? = DemoVoiceResult,
 ) {
+    if (result == null) {
+        matchsong.app.design.components.state.LoadingState(text = "加载分析结果…")
+        return
+    }
     Column(
         modifier =
             Modifier

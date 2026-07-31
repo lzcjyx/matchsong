@@ -1,0 +1,494 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 3,
+    "identityHash": "d8996b3061964b944d283e25be00244c",
+    "entities": [
+      {
+        "tableName": "song_metadata",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`songId` TEXT NOT NULL, `title` TEXT NOT NULL, `artist` TEXT NOT NULL, `language` TEXT NOT NULL, `genre` TEXT NOT NULL, `originalKeyMidi` INTEGER NOT NULL, `lowestMidi` INTEGER NOT NULL, `highestMidi` INTEGER NOT NULL, `tessituraLowMidi` INTEGER NOT NULL, `tessituraHighMidi` INTEGER NOT NULL, `rangeSpanSemitones` INTEGER NOT NULL, `highNoteBurden` REAL NOT NULL, `longNoteBurden` REAL NOT NULL, `leapDifficulty` REAL NOT NULL, `rhythmDifficulty` REAL NOT NULL, `overallDifficulty` REAL NOT NULL, `recommendedKeyShiftMin` INTEGER NOT NULL, `recommendedKeyShiftMax` INTEGER NOT NULL, `audioUrl` TEXT, `dataSource` TEXT NOT NULL, `credibility` TEXT NOT NULL, `dataVersion` TEXT NOT NULL, `importBatchId` TEXT NOT NULL, PRIMARY KEY(`songId`))",
+        "fields": [
+          {
+            "fieldPath": "songId",
+            "columnName": "songId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "artist",
+            "columnName": "artist",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "language",
+            "columnName": "language",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "genre",
+            "columnName": "genre",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "originalKeyMidi",
+            "columnName": "originalKeyMidi",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lowestMidi",
+            "columnName": "lowestMidi",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "highestMidi",
+            "columnName": "highestMidi",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tessituraLowMidi",
+            "columnName": "tessituraLowMidi",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tessituraHighMidi",
+            "columnName": "tessituraHighMidi",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rangeSpanSemitones",
+            "columnName": "rangeSpanSemitones",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "highNoteBurden",
+            "columnName": "highNoteBurden",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "longNoteBurden",
+            "columnName": "longNoteBurden",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "leapDifficulty",
+            "columnName": "leapDifficulty",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rhythmDifficulty",
+            "columnName": "rhythmDifficulty",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "overallDifficulty",
+            "columnName": "overallDifficulty",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recommendedKeyShiftMin",
+            "columnName": "recommendedKeyShiftMin",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recommendedKeyShiftMax",
+            "columnName": "recommendedKeyShiftMax",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "audioUrl",
+            "columnName": "audioUrl",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "dataSource",
+            "columnName": "dataSource",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "credibility",
+            "columnName": "credibility",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dataVersion",
+            "columnName": "dataVersion",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "importBatchId",
+            "columnName": "importBatchId",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "songId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_song_metadata_title",
+            "unique": false,
+            "columnNames": [
+              "title"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_song_metadata_title` ON `${TABLE_NAME}` (`title`)"
+          },
+          {
+            "name": "index_song_metadata_artist",
+            "unique": false,
+            "columnNames": [
+              "artist"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_song_metadata_artist` ON `${TABLE_NAME}` (`artist`)"
+          },
+          {
+            "name": "index_song_metadata_language",
+            "unique": false,
+            "columnNames": [
+              "language"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_song_metadata_language` ON `${TABLE_NAME}` (`language`)"
+          },
+          {
+            "name": "index_song_metadata_genre",
+            "unique": false,
+            "columnNames": [
+              "genre"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_song_metadata_genre` ON `${TABLE_NAME}` (`genre`)"
+          },
+          {
+            "name": "index_song_metadata_lowestMidi",
+            "unique": false,
+            "columnNames": [
+              "lowestMidi"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_song_metadata_lowestMidi` ON `${TABLE_NAME}` (`lowestMidi`)"
+          },
+          {
+            "name": "index_song_metadata_highestMidi",
+            "unique": false,
+            "columnNames": [
+              "highestMidi"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_song_metadata_highestMidi` ON `${TABLE_NAME}` (`highestMidi`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "song_range_profile",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`songId` TEXT NOT NULL, `originalRangeLowMidi` INTEGER NOT NULL, `originalRangeHighMidi` INTEGER NOT NULL, `tessituraPosition` REAL NOT NULL, `burdenHeadroom` REAL NOT NULL, `keyShiftRangeMin` INTEGER NOT NULL, `keyShiftRangeMax` INTEGER NOT NULL, `profileVersion` TEXT NOT NULL, PRIMARY KEY(`songId`), FOREIGN KEY(`songId`) REFERENCES `song_metadata`(`songId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "songId",
+            "columnName": "songId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "originalRangeLowMidi",
+            "columnName": "originalRangeLowMidi",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "originalRangeHighMidi",
+            "columnName": "originalRangeHighMidi",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tessituraPosition",
+            "columnName": "tessituraPosition",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "burdenHeadroom",
+            "columnName": "burdenHeadroom",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "keyShiftRangeMin",
+            "columnName": "keyShiftRangeMin",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "keyShiftRangeMax",
+            "columnName": "keyShiftRangeMax",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "profileVersion",
+            "columnName": "profileVersion",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "songId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_song_range_profile_songId",
+            "unique": false,
+            "columnNames": [
+              "songId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_song_range_profile_songId` ON `${TABLE_NAME}` (`songId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "song_metadata",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "songId"
+            ],
+            "referencedColumns": [
+              "songId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "favorite",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`songId` TEXT NOT NULL, `favoritedAtMs` INTEGER NOT NULL, PRIMARY KEY(`songId`), FOREIGN KEY(`songId`) REFERENCES `song_metadata`(`songId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "songId",
+            "columnName": "songId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "favoritedAtMs",
+            "columnName": "favoritedAtMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "songId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_favorite_songId",
+            "unique": false,
+            "columnNames": [
+              "songId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_favorite_songId` ON `${TABLE_NAME}` (`songId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "song_metadata",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "songId"
+            ],
+            "referencedColumns": [
+              "songId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "analysis_history",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`historyId` TEXT NOT NULL, `createdAtMs` INTEGER NOT NULL, `stableLowestMidi` REAL, `stableHighestMidi` REAL, `comfortLowestMidi` REAL, `comfortHighestMidi` REAL, `confidenceLevel` TEXT NOT NULL, `algorithmVersion` TEXT NOT NULL, `recommendationRefsJson` TEXT, `voicedFrameCount` INTEGER NOT NULL, `qualityUsable` INTEGER NOT NULL, PRIMARY KEY(`historyId`))",
+        "fields": [
+          {
+            "fieldPath": "historyId",
+            "columnName": "historyId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAtMs",
+            "columnName": "createdAtMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "stableLowestMidi",
+            "columnName": "stableLowestMidi",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "stableHighestMidi",
+            "columnName": "stableHighestMidi",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "comfortLowestMidi",
+            "columnName": "comfortLowestMidi",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "comfortHighestMidi",
+            "columnName": "comfortHighestMidi",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "confidenceLevel",
+            "columnName": "confidenceLevel",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "algorithmVersion",
+            "columnName": "algorithmVersion",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recommendationRefsJson",
+            "columnName": "recommendationRefsJson",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "voicedFrameCount",
+            "columnName": "voicedFrameCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "qualityUsable",
+            "columnName": "qualityUsable",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "historyId"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "user_feedback",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`feedbackId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `songId` TEXT NOT NULL, `resultId` TEXT, `feedbackType` TEXT NOT NULL, `createdAtMs` INTEGER NOT NULL, `appVersion` TEXT NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "feedbackId",
+            "columnName": "feedbackId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "songId",
+            "columnName": "songId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "resultId",
+            "columnName": "resultId",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "feedbackType",
+            "columnName": "feedbackType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAtMs",
+            "columnName": "createdAtMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "appVersion",
+            "columnName": "appVersion",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "feedbackId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_user_feedback_resultId_songId",
+            "unique": false,
+            "columnNames": [
+              "resultId",
+              "songId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_user_feedback_resultId_songId` ON `${TABLE_NAME}` (`resultId`, `songId`)"
+          }
+        ],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'd8996b3061964b944d283e25be00244c')"
+    ]
+  }
+}

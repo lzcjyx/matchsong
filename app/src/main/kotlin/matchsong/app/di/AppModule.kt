@@ -9,12 +9,18 @@ import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.IntoMap
 import dagger.multibindings.StringKey
 import matchsong.core.audio.android.RecordingFileManager
+import matchsong.core.common.time.Clock
 import matchsong.data.local.consent.DataStoreConsentRepository
+import matchsong.domain.analysis.RecordAnalysisUseCase
+import matchsong.domain.port.AnalysisHistoryRepository
 import matchsong.domain.port.ConsentRepository
+import matchsong.domain.port.FavoritesRepository
 import matchsong.domain.port.RecordingFileCleaner
 import matchsong.domain.port.SettingsRepository
 import matchsong.domain.port.SongRepository
+import matchsong.domain.recommendation.GetFavoriteSongIdsUseCase
 import matchsong.domain.recommendation.GetRecommendationsUseCase
+import matchsong.domain.recommendation.ToggleFavoriteUseCase
 import matchsong.domain.recording.CleanupStaleRecordingsUseCase
 import matchsong.domain.usecase.AcceptConsentUseCase
 import matchsong.domain.usecase.GetOnboardingStatusUseCase
@@ -91,4 +97,22 @@ object AppModule {
         songRepo: SongRepository,
         settingsRepo: SettingsRepository,
     ): GetRecommendationsUseCase = GetRecommendationsUseCase(songRepo, settingsRepo)
+
+    /** M8.3-1 收藏用例绑定（详情页/收藏页共用单一写入入口）。 */
+    @Provides
+    @Singleton
+    fun provideToggleFavoriteUseCase(repo: FavoritesRepository): ToggleFavoriteUseCase = ToggleFavoriteUseCase(repo)
+
+    @Provides
+    @Singleton
+    fun provideGetFavoriteSongIdsUseCase(repo: FavoritesRepository): GetFavoriteSongIdsUseCase =
+        GetFavoriteSongIdsUseCase(repo)
+
+    /** M8.4-1 记录分析历史用例绑定（FR-HX-1 数据侧，M8.2 分析完成后装配）。 */
+    @Provides
+    @Singleton
+    fun provideRecordAnalysisUseCase(
+        historyRepository: AnalysisHistoryRepository,
+        clock: Clock,
+    ): RecordAnalysisUseCase = RecordAnalysisUseCase(historyRepository, clock)
 }

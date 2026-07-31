@@ -178,7 +178,7 @@ def main():
             "recommendedKeyShiftMax": 3,
             "audioUrl": None,
             "dataSource": s["source"],
-            "credibility": "LOW",
+            "credibility": "MEDIUM",
             "dataVersion": "1.0.0",
             "importBatchId": "mvp-001",
         })
