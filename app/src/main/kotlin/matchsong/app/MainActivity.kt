@@ -3,19 +3,15 @@ package matchsong.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
-import matchsong.app.ui.theme.MatchSongTheme
+import matchsong.app.design.MatchSongTheme
+import matchsong.app.navigation.AppNavHost
+import matchsong.app.navigation.Routes
 
 /**
- * M1.1-2 空 Compose 应用入口。
- * M2 起接入 Navigation Compose 路由（FR-SHELL-1）。
+ * M2.1-1 应用入口：挂载 Navigation Compose NavHost。
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -23,26 +19,18 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MatchSongTheme {
-                AppScaffold()
+                MatchSongApp()
             }
         }
     }
 }
 
 @Composable
-fun AppScaffold(modifier: Modifier = Modifier) {
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
-        Text(
-            text = "matchsong",
-            modifier = Modifier.padding(innerPadding),
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun AppScaffoldPreview() {
-    MatchSongTheme {
-        AppScaffold()
-    }
+fun MatchSongApp() {
+    val navController = rememberNavController()
+    // M2.3-2 启动分流：根据 ConsentRecord 决定 SPLASH/ONBOARDING/HOME
+    AppNavHost(
+        navController = navController,
+        startDestination = Routes.SPLASH,
+    )
 }

@@ -87,5 +87,9 @@ naming:
     ignoreAnnotated:
       - "Composable"
       - "Preview"
+  # 聚合文件（枚举+组件、数据类+页面、色板+主题等）为 Compose 项目常见组织方式，
+  # 单文件含多个强相关声明时豁免 MatchingDeclarationName（KDoc 已说明聚合意图）
+  MatchingDeclarationName:
+    active: false
 
 # 架构规则：禁止空 catch（SwallowedException 已覆盖）；禁止 println（PrintStackTrace 覆盖 stacktrace，println 用风格规则）

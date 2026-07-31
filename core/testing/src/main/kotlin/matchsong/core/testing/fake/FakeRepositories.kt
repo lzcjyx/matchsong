@@ -151,4 +151,20 @@ class FakeConsentRepository(
     override suspend fun revoke() {
         acceptedVersion = null
     }
+
+    companion object {
+        /** 所有已创建实例（供测试重置；Hilt Singleton 跨测试共享状态）。 */
+        private val instances = java.util.Collections.synchronizedList(mutableListOf<FakeConsentRepository>())
+
+        /** 重置全部实例为未同意（M2.5 UI 测试 @Before 调用，保证测试隔离）。 */
+        fun resetAll() {
+            synchronized(instances) {
+                instances.forEach { it.acceptedVersion = null }
+            }
+        }
+    }
+
+    init {
+        instances.add(this)
+    }
 }
