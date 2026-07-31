@@ -15,7 +15,8 @@ lifecycle = "2.8.7"
 navigationCompose = "2.8.5"
 
 # DI / 存储 / 序列化 / 协程
-hilt = "2.52"
+# 2.53+：kotlinx-metadata 2.0.0-Beta5，支持读取 Kotlin 2.1.0 元数据（google/dagger#4451）
+hilt = "2.53"
 hiltNavigationCompose = "1.2.0"
 room = "2.6.1"
 datastore = "1.1.1"
@@ -29,6 +30,7 @@ mockk = "1.13.13"
 turbine = "1.1.0"
 androidxTestCore = "1.6.1"
 androidxTestExtJunit = "1.2.1"
+androidxTestRules = "1.6.1"
 espresso = "3.6.1"
 composeUiTest = "1.7.6"
 androidxJunit = "1.2.1"
@@ -89,6 +91,7 @@ junit5-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", ve
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
 androidx-test-core = { group = "androidx.test", name = "core", version.ref = "androidxTestCore" }
+androidx-test-rules = { group = "androidx.test", name = "rules", version.ref = "androidxTestRules" }
 androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxTestExtJunit" }
 androidx-test-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
 compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }

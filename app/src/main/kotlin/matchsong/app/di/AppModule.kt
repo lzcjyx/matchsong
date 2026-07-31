@@ -8,10 +8,14 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.IntoMap
 import dagger.multibindings.StringKey
+import matchsong.core.audio.android.RecordingFileManager
 import matchsong.data.local.consent.DataStoreConsentRepository
 import matchsong.domain.port.ConsentRepository
+import matchsong.domain.port.RecordingFileCleaner
+import matchsong.domain.recording.CleanupStaleRecordingsUseCase
 import matchsong.domain.usecase.AcceptConsentUseCase
 import matchsong.domain.usecase.GetOnboardingStatusUseCase
+import java.io.File
 import javax.inject.Provider
 import javax.inject.Singleton
 
@@ -59,4 +63,21 @@ object AppModule {
     @Singleton
     fun provideGetOnboardingStatusUseCase(repo: ConsentRepository): GetOnboardingStatusUseCase =
         GetOnboardingStatusUseCase(repo, PRIVACY_NOTICE_VERSION)
+
+    /**
+     * M3.5-1 录音临时文件清理 Port 绑定（ARCHITECTURE.md §7.3）：
+     * 目录 cacheDir/recordings/（缓存目录，系统可清理），实现为
+     * RecordingFileManager（纯 java.io，JVM 可测）。
+     */
+    @Provides
+    @Singleton
+    fun provideRecordingFileCleaner(
+        @ApplicationContext context: Context,
+    ): RecordingFileCleaner = RecordingFileManager(File(context.cacheDir, RecordingFileManager.RECORDINGS_DIR_NAME))
+
+    /** M3.5-2 启动过期残留清理用例绑定（FR-REC-8）。 */
+    @Provides
+    @Singleton
+    fun provideCleanupStaleRecordingsUseCase(cleaner: RecordingFileCleaner): CleanupStaleRecordingsUseCase =
+        CleanupStaleRecordingsUseCase(cleaner)
 }

@@ -958,6 +958,8 @@ Fake 数据必须明确标记为测试数据，不得进入 Release 构建。
 
 ### M3.1 麦克风权限状态机
 
+**状态：** `DONE`（2026-07-31，PermissionStateMachine 六状态 + UI 集成：请求/拒绝/永久拒绝/设置返回）
+
 状态至少包括：
 
 - NotRequested；
@@ -979,6 +981,8 @@ Fake 数据必须明确标记为测试数据，不得进入 Release 构建。
 
 ### M3.2 Recording Foreground Service
 
+**状态：** `DONE`（2026-07-31，前台服务+通知+停止动作；RecordingPort 通信桥；AudioFocus 焦点处理；后台录音验证通过）
+
 实现：
 
 - 启动；
@@ -995,6 +999,8 @@ Fake 数据必须明确标记为测试数据，不得进入 Release 构建。
 ---
 
 ### M3.3 AudioRecord 封装
+
+**状态：** `DONE`（2026-07-31，AndroidAudioRecorder（VOICE_RECOGNITION/44.1k/mono）+ 采样率降级链 + 错误映射 + FakeAudioRecorder）
 
 实现：
 
@@ -1020,6 +1026,8 @@ FakeAudioRecorder
 
 ### M3.4 录音状态机
 
+**状态：** `DONE`（2026-07-31，RecordingStateMachine 八状态 + 倒计时 + 自动停止 + 中断标记）
+
 状态建议：
 
 ```text
@@ -1041,6 +1049,8 @@ Failed
 
 ### M3.5 PCM/WAV 存储
 
+**状态：** `DONE`（2026-07-31，WavFileWriter/Reader（与夹具同格式）+ RecordingFileManager + 启动残留清理）
+
 实现：
 
 - 临时 PCM；
@@ -1058,6 +1068,8 @@ Failed
 
 ### M3.6 音量反馈
 
+**状态：** `DONE`（2026-07-31，VolumeMeter + 集中阈值 + ≤10Hz 节流 + 录音页音量条/削波/过低提示）
+
 实时展示：
 
 - 当前音量；
@@ -1070,6 +1082,8 @@ UI 更新频率必须节流，不得每个采样点触发 Compose 重组。
 ---
 
 ### M3.7 录音测试
+
+**状态：** `DONE`（2026-07-31，单元测试 100+ 通过；仪器测试 13/13；模拟器人工验证：录音+前台通知+后台5s+停止；真机矩阵待补充）
 
 自动测试：
 

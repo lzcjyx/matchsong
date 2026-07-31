@@ -30,6 +30,8 @@ android {
 dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:common"))
+    // domain — android 子包实现 RecordingPort/RecordingFileCleaner；VolumeMeter 输出 domain.recording.VolumeLevel（M3.6-1）
+    implementation(project(":domain"))
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.serialization.json)
 

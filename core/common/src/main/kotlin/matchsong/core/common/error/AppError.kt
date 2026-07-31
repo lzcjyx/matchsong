@@ -40,12 +40,58 @@ sealed class AppError(
         messageKey: String,
         cause: Throwable? = null,
         details: Map<String, String> = emptyMap(),
+        val reason: Reason = Reason.Unknown,
     ) : AppError(messageKey, cause, details) {
+        /** 失败原因分类（M3.3-3 错误映射/采样率降级，供 UI 与状态机区分处理）。 */
+        enum class Reason {
+            /** 初始化失败（采样率探测全部失败 / AudioRecord 未初始化）。 */
+            InitFailed,
+
+            /** 设备无可用麦克风。 */
+            MicUnavailable,
+
+            /** 麦克风被其他应用占用（含焦点获取失败，§6.2）。 */
+            MicBusy,
+
+            /** 采集期间 PCM 读取失败。 */
+            ReadError,
+
+            /** 录音期间麦克风权限被撤销。 */
+            PermissionRevoked,
+
+            /** 未知原因（兜底）。 */
+            Unknown,
+        }
+
         /** 初始化失败（无麦克风/被占用/读取失败），[cause] 携带具体根因。 */
         class InitFailed(
             cause: Throwable? = null,
             details: Map<String, String> = emptyMap(),
-        ) : RecordingError("error.recording.init_failed", cause, details)
+        ) : RecordingError("error.recording.init_failed", cause, details, Reason.InitFailed)
+
+        /** 设备无可用麦克风（无麦克风设备检测，M3.3-3）。 */
+        class MicUnavailable(
+            cause: Throwable? = null,
+            details: Map<String, String> = emptyMap(),
+        ) : RecordingError("error.recording.mic_unavailable", cause, details, Reason.MicUnavailable)
+
+        /** 麦克风被其他应用占用（含焦点获取失败，ARCHITECTURE.md §6.2）。 */
+        class MicBusy(
+            cause: Throwable? = null,
+            details: Map<String, String> = emptyMap(),
+        ) : RecordingError("error.recording.mic_busy", cause, details, Reason.MicBusy)
+
+        /** 采集期间 PCM 读取失败（read() 返回错误码或抛出异常）。 */
+        class ReadError(
+            cause: Throwable? = null,
+            details: Map<String, String> = emptyMap(),
+        ) : RecordingError("error.recording.read_error", cause, details, Reason.ReadError)
+
+        /** 录音期间麦克风权限被撤销。 */
+        class PermissionRevoked(
+            cause: Throwable? = null,
+            details: Map<String, String> = emptyMap(),
+        ) : RecordingError("error.recording.permission_revoked", cause, details, Reason.PermissionRevoked)
 
         /** 被来电等中断（焦点丢失，ADR-002 遗留项）。 */
         object Interrupted : RecordingError("error.recording.interrupted")
@@ -157,6 +203,10 @@ sealed class AppError(
                 "error.permission.permanently_denied" to "请在系统设置中开启麦克风",
                 "error.permission.unavailable" to "设备没有可用的麦克风",
                 "error.recording.init_failed" to "无法开始录音（麦克风不可用或被占用）",
+                "error.recording.mic_unavailable" to "设备没有可用的麦克风",
+                "error.recording.mic_busy" to "麦克风正被其他应用使用",
+                "error.recording.read_error" to "录音数据读取失败",
+                "error.recording.permission_revoked" to "麦克风权限已撤销，无法继续录音",
                 "error.recording.interrupted" to "录音被来电中断，本次结果可能不完整",
                 "error.recording.canceled" to "录音已取消",
                 "error.quality.too_short" to "录音过短，请至少演唱 10 秒",

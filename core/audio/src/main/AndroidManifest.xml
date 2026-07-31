@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 录音权限（危险权限，运行时申请，M3.1） -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- 前台服务权限：API 28+ 一直需要；Android 14 (API 34) 起麦克风类型必须声明 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+
+    <!-- Android 13+ 通知权限：前台服务通知需持有（lint NotificationPermission 要求） -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <application>
+        <!-- M3.2-1 录音前台服务：foregroundServiceType=microphone（API 34+ 强制，spike 实测验证） -->
+        <service
+            android:name=".android.RecordingService"
+            android:exported="false"
+            android:foregroundServiceType="microphone" />
+    </application>
+
+</manifest>
