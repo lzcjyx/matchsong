@@ -352,7 +352,7 @@ docs/research/product-opportunities.md
 
 ### M-1.4 AudioRecord 与 MediaRecorder Spike
 
-**状态：** `BLOCKED`（2026-07-30，代码与编译验证完成，交付 experiments/audio-record/ 与 docs/experiments/audio-recording-spike-results.md；真机运行验证因开发机无设备/AVD 受阻，需设备环境后解除）
+**状态：** `DONE`（2026-07-31，代码 + 编译 + 模拟器运行验证全部完成，交付 experiments/audio-record/ 与 docs/experiments/audio-recording-spike-results.md）
 
 分别实现最小实验：
 

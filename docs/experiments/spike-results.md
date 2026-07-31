@@ -11,7 +11,7 @@
 | Spike | 代码位置 | 状态 | 详细结果 |
 |---|---|---|---|
 | M-1.5 音高检测（YIN / ACF / FFT） | `experiments/pitch-detection/` | **DONE**（合成信号实测） | `docs/experiments/pitch-detection-results.md` |
-| M-1.4 录音（AudioRecord / MediaRecorder） | `experiments/audio-record/` | **PARTIAL**（编译通过；真机运行 BLOCKED） | `docs/experiments/audio-recording-spike-results.md` |
+| M-1.4 录音（AudioRecord / MediaRecorder） | `experiments/audio-record/` | **DONE**（编译 + 模拟器运行实测） | `docs/experiments/audio-recording-spike-results.md` |
 
 ## 2. 关键实测数据（M-1.5，合成信号，帧 2048@44.1k）
 
@@ -39,7 +39,7 @@
 | 决策点 | Spike 依据 | 决策 |
 |---|---|---|
 | 音高检测方法 | YIN 全信号零错误 + 抗削波 + 拒噪 | **YIN（纯 Kotlin）** → ADR-003 |
-| 采集 API | 仅 AudioRecord 可读 PCM | **AudioRecord** → ADR-002 |
+| 采集 API | 仅 AudioRecord 可读 PCM（实测确认） | **AudioRecord** → ADR-002 |
 | 推荐方向 | 音色识别不可靠（研究 + PLAN §2.1 禁止）；音域可解释 | **音域推荐** → ADR-001 |
 | TFLite / CREPE | 端侧实时性与功耗无 Spike 实测支持 | **MVP 不引入**（待性能证明不足时再评估） |
 | 后端 | 全部核心流程可端侧完成 | **MVP 无后端**（原始音频不上传） |
@@ -49,7 +49,7 @@
 
 ## 5. 遗留风险（进入 M0 前需知晓）
 
-1. **M-1.4 运行验证 BLOCKED**：真机实测（麦克风、前后台、中断、CPU/内存）未完成。不影响 M-1.5 结论，但 M3（录音系统）实现前必须补测。
+1. **真实设备未测**：M-1.4 在模拟器验证（虚拟麦克风），真实人声采集/增益/噪声需 M3/M10 真机测试。
 2. **真实人声未测**：M-1.5 基于合成信号，真实颤音/滑音/噪声环境表现需设备矩阵验证（M5/M10）。
 3. **舒适音区无统一客观定义**：需 M0 在 SPEC 中给出产品化定义（如"稳定演唱的 80% 分布区间"）。
 4. **无 Gradle Wrapper**：M1 需 `gradle wrapper`（本机系统 Gradle 8.5 init.d 注入与 FAIL_ON_PROJECT_REPOS 冲突，Android 工程需用缓存 8.9 dist 或独立 wrapper）。

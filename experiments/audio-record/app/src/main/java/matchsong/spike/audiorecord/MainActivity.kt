@@ -27,6 +27,7 @@ class MainActivity : AppCompatActivity() {
 
     private var recording = false
     private var startedAt: Long = 0
+    private val autoStopHandler = android.os.Handler(android.os.Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,6 +60,17 @@ class MainActivity : AppCompatActivity() {
         setContentView(container)
 
         requestMicPermission()
+
+        // Spike 自动化：支持 adb am start -n .../.MainActivity --es auto_start audiorecord
+        // 便于无 UI 交互环境下驱动录音验证（Spike 代码，不进生产模块）
+        val autoMode = intent.getStringExtra("auto_start")
+        if (autoMode != null) {
+            currentMode = if (autoMode == "mediarecorder") MODE_MEDIA_RECORDER else MODE_AUDIO_RECORD
+            val durationMs = intent.getIntExtra("auto_duration", 15000)
+            statusText.text = "自动模式：${currentMode}，${durationMs}ms"
+            startRecording()
+            autoStopHandler.postDelayed({ if (recording) stopRecording() }, durationMs.toLong())
+        }
     }
 
     private fun onToggle() {

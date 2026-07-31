@@ -4,10 +4,8 @@
     <!-- 录音权限（危险权限，运行时申请） -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
-    <!-- Android 14 (API 34) 起，麦克风属于敏感权限：仅限前台使用（App 位于前台或系统可识别的服务中） -->
-    <uses-permission
-        android:name="android.permission.FOREGROUND_SERVICE"
-        android:maxSdkVersion="33" />
+    <!-- 前台服务权限（API 28+ 一直需要；Android 14 还需 FOREGROUND_SERVICE_MICROPHONE） -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
 
     <application
