@@ -99,7 +99,11 @@ fun AppNavHost(
             AnalyzingScreen(onDone = { navController.navigate(Routes.VOICE_RESULT) { popUpTo(Routes.QUALITY_RESULT) } })
         }
         composable(Routes.VOICE_RESULT) {
-            VoiceResultScreen(onSeeRecommendations = { navController.navigate(Routes.RECOMMENDATION_LIST) })
+            // M5.7：演示结果（M8.2 接入真实分析管线）；onRetry 回 Prepare 重录
+            VoiceResultScreen(
+                onSeeRecommendations = { navController.navigate(Routes.RECOMMENDATION_LIST) },
+                onRetry = { navController.navigate(Routes.PREPARE) { popUpTo(Routes.RECORDING) } },
+            )
         }
         composable(Routes.RECOMMENDATION_LIST) {
             RecommendationListScreen(onSongClick = {

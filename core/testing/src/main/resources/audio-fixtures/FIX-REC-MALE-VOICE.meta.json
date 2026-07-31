@@ -1,0 +1,10 @@
+{
+  "id": "FIX-REC-MALE-VOICE",
+  "type": "recorded",
+  "format": "44.1k/16bit/mono",
+  "durationSec": 27.3,
+  "source": "MIR-1K dataset example3 (via GitHub mirror vaaiibhav/mirexDatasetmir1k-2004)",
+  "license": "MIR-1K 为研究用途公开数据集（自由使用；非商业限制见原始声明）",
+  "expected": "男声歌唱，平均 F0 184.7Hz，范围 122-268Hz（真值标签 FIX-REC-MALE-VOICE.ref.txt，10ms hop，0=unvoiced）",
+  "note": "M-1.5 遗留风险 R-2（真实人声未测）关闭：本夹具提供真实男声+真值音高"
+}

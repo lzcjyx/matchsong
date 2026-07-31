@@ -1,0 +1,10 @@
+{
+  "id": "FIX-REC-FEMALE-VOICE",
+  "type": "recorded",
+  "format": "44.1k/16bit/mono",
+  "durationSec": 24.5,
+  "source": "MIR-1K dataset example1 (via GitHub mirror vaaiibhav/mirexDatasetmir1k-2004)",
+  "license": "MIR-1K 为研究用途公开数据集（自由使用；非商业限制见原始声明）",
+  "expected": "女声歌唱，平均 F0 284.7Hz（真值标签 FIX-REC-FEMALE-VOICE.ref.txt，10ms hop，0=unvoiced）",
+  "note": "M-1.5 遗留风险 R-2 关闭：真实女声+真值音高"
+}

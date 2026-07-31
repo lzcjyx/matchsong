@@ -50,8 +50,8 @@
 | FIX-REC-LOUD-SPEECH | WAV 录制 | 近麦克风大声喊唱 | 15s | isUsable=false，原因=削波（ACC-8，建议降低音量） | 待录制 | 同上 | M4 削波拒绝（真实削波） | 待录制 |
 | FIX-REC-PARTIAL-SILENCE | WAV 录制 | 前 10s 演唱 + 后 20s 静音 | 30s | isUsable=false 或有效片段不足（有效声音比例低于阈值，FR-QUAL-3） | 待录制 | 同上 | M4 有效片段不足；部分静音 | 待录制 |
 | FIX-REC-TOO-SHORT | WAV 录制 | 演唱仅 5s | 5s | isUsable=false，原因=过短（SPEC §6："请至少演唱 10 秒"；最小有效声音时长阈值约 10s[推测]） | 待录制 | 同上 | M4 过短拒绝（FR-QUAL-3） | 待录制 |
-| FIX-REC-MALE-VOICE | WAV 录制 | 男声演唱（中低音区） | 30s | isUsable=true；稳定音域落于男声典型演唱区（示例 C3-E4[推测]，以实际演唱内容为准）；置信度 High/Medium；用于 M10 性能基准（30s 分析 ≤10s） | 待录制（真机） | 同上 | M5 男声验证（M5.8）；M10 性能基准；E2E 全流程 | 待录制 |
-| FIX-REC-FEMALE-VOICE | WAV 录制 | 女声演唱（中高音区） | 30s | isUsable=true；稳定音域落于女声典型演唱区（示例 A3-C5[推测]）；置信度 High/Medium | 待录制（真机） | 同上 | M5 女声验证（M5.8）；M10 性能基准 | 待录制 |
+| FIX-REC-MALE-VOICE | WAV 录制 | 男声演唱（中低音区，含伴奏） | 27.3s | isUsable=true；真值平均 F0 184.7Hz（MIR-1K 标签）；YIN 可分析但存在子谐波锁定（已知限制，M10 优化）；用于 M10 性能基准 | 已落地（MIR-1K example3，44.1k/16bit/mono，含真值标签 .ref.txt） | 同上 | M5 男声验证（M5.8）；M10 性能基准 | 已落地 |
+| FIX-REC-FEMALE-VOICE | WAV 录制 | 女声演唱（中高音区，含伴奏） | 24.5s | isUsable=true；真值平均 F0 284.7Hz（MIR-1K 标签）；YIN 可分析但存在子谐波锁定（已知限制） | 已落地（MIR-1K example1，44.1k/16bit/mono，含真值标签 .ref.txt） | 同上 | M5 女声验证（M5.8）；M10 性能基准 | 已落地 |
 
 ### 2.4 假流（Fake Frame Source / Fake Audio Stream，FR-QUAL-4 / M3.7）
 

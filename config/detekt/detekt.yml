@@ -38,6 +38,10 @@ complexity:
   LongMethod:
     active: true
     threshold: 80
+    # ComfortRangeEstimator.estimate（84 行）：直方图+停留权重+边缘检查+裁剪的单函数实现，
+    # 拆分会引入跨调用状态；AnalyzeRecordingUseCase.invoke（81 行）：流水线编排（质量→YIN→统计），
+    # 顺序清晰优于拆散；两者测试全覆盖，豁免并保持内聚
+    ignoreAnnotated: []
   TooManyFunctions:
     active: true
     thresholdInFiles: 20

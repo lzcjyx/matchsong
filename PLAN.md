@@ -1279,6 +1279,8 @@ AudioQualityReport
 
 ### M5.1 YIN 音高检测生产实现
 
+**状态：** `DONE`（2026-07-31，YinPitchDetector 生产化：高通预滤波 + Double 精度 + 阈值 0.25 + 批量/取消；人声标定驱动修复）
+
 将 Spike 中验证通过的实现重构为生产模块。
 
 要求：
@@ -1295,6 +1297,8 @@ AudioQualityReport
 
 ### M5.2 音高后处理
 
+**状态：** `DONE`（2026-07-31，PitchPostProcessor：过滤/八度修正/中值滤波/跳变过滤/最短片段 + PitchNotation 转换）
+
 实现：
 
 - 无效帧过滤；
@@ -1309,6 +1313,8 @@ AudioQualityReport
 ---
 
 ### M5.3 稳定音域估计
+
+**状态：** `DONE`（2026-07-31，RangeStatistics P5/P95 分位 + VocalRangeEstimator（样本充足门禁 + 置信度））
 
 不得直接把所有帧中的最小值和最大值作为用户音域。
 
@@ -1325,6 +1331,8 @@ AudioQualityReport
 ---
 
 ### M5.4 舒适音区估计
+
+**状态：** `DONE`（2026-07-31，ComfortRangeEstimator：分布/停留权重/稳定比例/边缘检查 + 裁剪 ⊆ 稳定区间）
 
 基于：
 
@@ -1349,6 +1357,8 @@ AudioQualityReport
 
 ### M5.5 音高稳定性
 
+**状态：** `DONE`（2026-07-31，PitchStabilityMetrics：稳定片段比例/波动/长音波动/有效帧比例，无唱功分数）
+
 计算：
 
 - 稳定片段比例；
@@ -1361,6 +1371,8 @@ MVP 不直接输出“唱功分数”。
 ---
 
 ### M5.6 分析结果模型
+
+**状态：** `DONE`（2026-07-31，VoiceAnalysisResult + AnalyzeRecordingUseCase 流水线编排（质量门禁短路 + 置信度分档 + 版本））
 
 输出：
 
@@ -1385,6 +1397,8 @@ VoiceAnalysisResult
 
 ### M5.7 结果页面
 
+**状态：** `DONE`（2026-07-31，VoiceResultScreen：音域/舒适区/稳定性通俗展示 + 本次录音估计声明 + 数据不足提示 + 置信度徽标）
+
 向用户展示：
 
 - 本次稳定音域；
@@ -1400,6 +1414,8 @@ VoiceAnalysisResult
 ---
 
 ### M5.8 测试
+
+**状态：** `DONE`（2026-07-31，合成全场景 + MIR-1K 真实人声（男/女声+真值标签，开源下载）+ 一致性 + 性能；已知限制：带伴奏人声子谐波锁定记录为 M10 优化项）
 
 测试：
 
