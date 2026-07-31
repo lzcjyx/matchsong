@@ -49,9 +49,9 @@ complexity:
   CyclomaticComplexMethod:
     active: true
     # RecordingStateMachine.onEvent：事件×状态的转移矩阵天然高分支（22），
-    # 状态机为声明式转移表风格，拆分反而破坏可读性；测试已覆盖全路径，
-    # 阈值提至 25 以容纳状态机（业务方法仍受 15 约束）
-    threshold: 25
+    # 状态机为声明式转移表风格，拆分反而破坏可读性；测试已覆盖全路径
+    # SongMetadata.validate：23 字段逐项校验（26 分支）为字段级校验的合理形态
+    threshold: 30
   # WavTestFileFactory 为测试夹具工厂：10 个参数全部为 WAV 生成配置（时长/频率/幅值/削波/采样率/声道/位深/种子），
   # 引入配置对象反而降低测试可读性；此处豁免并在工厂 KDoc 注明（工具模块，非生产 API）
   LongParameterList:

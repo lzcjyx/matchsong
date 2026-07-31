@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "matchsong://song-schema/v1",
+  "title": "MatchSong 歌曲数据 Schema（M6.1-2）",
+  "description": "MVP 歌曲数据导入文件的统一契约（PLAN §12.2、data-model §2.8、FR-SONG-3）。文件为歌曲对象数组；required 为最小契约（M6.1-2 定义），SongMetadata 的其余非空字段（跨度/负担/难度/变调范围）由 SongDataParser 在解析期保证。单一来源：data-model §2.8。",
+  "type": "array",
+  "items": { "$ref": "#/$defs/song" },
+  "$defs": {
+    "song": {
+      "type": "object",
+      "required": [
+        "songId",
+        "title",
+        "artist",
+        "language",
+        "genre",
+        "originalKeyMidi",
+        "lowestMidi",
+        "highestMidi",
+        "tessituraLowMidi",
+        "tessituraHighMidi",
+        "dataSource",
+        "credibility",
+        "dataVersion"
+      ],
+      "properties": {
+        "songId": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "artist": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "language": { "type": "string", "pattern": "^[a-z]{2}$" },
+        "genre": {
+          "type": "string",
+          "enum": ["流行", "摇滚", "民谣", "R&B", "嘻哈", "电子", "爵士", "古典", "乡村", "金属", "蓝调", "其他"]
+        },
+        "originalKeyMidi": { "type": "integer", "minimum": 0, "maximum": 127 },
+        "lowestMidi": { "type": "integer", "minimum": 0, "maximum": 127 },
+        "highestMidi": { "type": "integer", "minimum": 0, "maximum": 127 },
+        "tessituraLowMidi": { "type": "integer", "minimum": 0, "maximum": 127 },
+        "tessituraHighMidi": { "type": "integer", "minimum": 0, "maximum": 127 },
+        "rangeSpanSemitones": { "type": "integer", "minimum": 0 },
+        "highNoteBurden": { "type": "number", "minimum": 0, "maximum": 1 },
+        "longNoteBurden": { "type": "number", "minimum": 0, "maximum": 1 },
+        "leapDifficulty": { "type": "number", "minimum": 0, "maximum": 1 },
+        "rhythmDifficulty": { "type": "number", "minimum": 0, "maximum": 1 },
+        "overallDifficulty": { "type": "number", "minimum": 0, "maximum": 1 },
+        "recommendedKeyShiftMin": { "type": "integer", "minimum": -12, "maximum": 0 },
+        "recommendedKeyShiftMax": { "type": "integer", "minimum": 0, "maximum": 12 },
+        "audioUrl": { "type": ["string", "null"] },
+        "dataSource": { "type": "string", "minLength": 1 },
+        "credibility": { "type": "string", "enum": ["HIGH", "MEDIUM", "LOW"] },
+        "dataVersion": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^\\d+\\.\\d+\\.\\d+(?:[-+][0-9A-Za-z.\\-]+)?$"
+        },
+        "importBatchId": { "type": ["string", "null"] }
+      },
+      "additionalProperties": true
+    }
+  }
+}

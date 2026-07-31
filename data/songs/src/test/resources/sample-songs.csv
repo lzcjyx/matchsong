@@ -1,0 +1,4 @@
+songId,title,artist,language,genre,originalKeyMidi,lowestMidi,highestMidi,tessituraLowMidi,tessituraHighMidi,rangeSpanSemitones,highNoteBurden,longNoteBurden,leapDifficulty,rhythmDifficulty,overallDifficulty,recommendedKeyShiftMin,recommendedKeyShiftMax,audioUrl,dataSource,credibility,dataVersion,importBatchId
+song-001,晴天,周杰伦,zh,流行,62,57,74,60,69,17,0.35,0.28,0.30,0.40,0.32,-2,3,https://example.com/qingtian.mp3,官方谱面（人工复核）,HIGH,1.0.0,B-20260731-001
+song-002,小幸运,田馥甄,zh,流行,64,55,78,58,71,23,0.45,0.50,0.40,0.55,0.48,-3,2,,公开 MIDI 数据集,MEDIUM,1.0.0,
+song-003,Someone Like You,Adele,en,R&B,69,62,79,64,74,17,0.60,0.55,0.50,0.45,0.52,-4,0,https://example.com/someone-like-you.mp3,人工标注（复核）,LOW,1.0.0,B-20260731-001

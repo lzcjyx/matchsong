@@ -1483,6 +1483,8 @@ VoiceAnalysisResult
 
 ### M6.1 数据 Schema
 
+**状态：** `DONE`（2026-07-31，SongMetadata/SongRangeProfile 23 字段 + JSON Schema 校验器）
+
 使用 Kotlin 数据类和可验证的 JSON Schema 或等价校验方式。
 
 所有音高字段统一使用内部标准，例如 MIDI Note。
@@ -1490,6 +1492,8 @@ VoiceAnalysisResult
 ---
 
 ### M6.2 数据导入工具
+
+**状态：** `DONE`（2026-07-31，JSON/CSV 解析 + 校验器（重复/音域/来源/版本）+ ImportRunner CLI）
 
 实现：
 
@@ -1507,6 +1511,8 @@ VoiceAnalysisResult
 
 ### M6.3 MVP 数据集
 
+**状态：** `DONE`（2026-07-31，50 首（zh 30/en 20，4 风格），0 错误校验；来源登记 + 推导音域 [推测] LOW 可信度诚实标注）
+
 建立小型高质量数据集。
 
 早期建议：
@@ -1523,6 +1529,8 @@ VoiceAnalysisResult
 
 ### M6.4 Room 存储
 
+**状态：** `DONE`（2026-07-31，3 实体 + DAO + 数据库 v1 + 导入幂等/版本升级 + 搜索/筛选/收藏）
+
 实现：
 
 - Song Entity；
@@ -1537,6 +1545,8 @@ VoiceAnalysisResult
 ---
 
 ### M6.5 数据测试
+
+**状态：** `DONE`（2026-07-31，数据集回归 4 用例 + 导入/校验测试 + Room In-Memory 36 测试 + schema 导出）
 
 覆盖：
 
