@@ -88,6 +88,7 @@ class SettingsViewModel
             if (packUrl.isBlank() || _state.value is UiState.Busy) return
             viewModelScope.launch {
                 _state.value = UiState.Busy(Action.IMPORT_PACK)
+                _importMessage.value = null // 新导入清空旧结果提示
                 songPackImporter.importPack(packUrl.trim()).fold(
                     onSuccess = { outcome ->
                         _state.value = UiState.Done(Action.IMPORT_PACK)

@@ -70,6 +70,8 @@ App 版本:        versionName (versionCode)
 | BUG-014 | 录音完成→质量页白屏卡死（"完成"消失后无下一步） | P1 | 真机 | 0.1.0 | FIXED | 真机修复 | stop() 先发 COMPLETED 后 finalizeWav——UI 竞态读到 null WAV；重排落盘顺序 + 防御性错误态 |
 | BUG-015 | 录音混入非歌唱说话声，干扰音域分析 | P2 | 真机 | 0.1.0 | FIXED | 真机修复 | 时间间隔分段（150ms）+ 稳定片段比例门禁（<0.3 判语音为主，按数据不足处理） |
 | BUG-016 | 内置曲库从未在运行时导入——真机推荐必然空结果 | P1 | 全部 | 0.1.0 | FIXED | 真机修复 | 数据集移入 assets + Application 启动幂等导入；SongCatalogSeedTest 回归（真实 DB 50 首） |
+| BUG-017 | 停止录音后必现"录音文件不可用"（服务销毁竞态） | P1 | 真机 | 0.1.0 | FIXED | 真机修复 | release() 置空 instance+删文件（M9.2 误加）；改幂等收尾，文件删除归分析流程 |
+| BUG-018 | 曲库仅 50 首且无法扩展 | P2 | 全部 | 0.1.0 | FIXED | 真机修复 | 联网歌曲包：HTTPS 下载 JSON → 复用导入管线（版本事务替换）；设置页管理 + 示例周杰伦包 |
 
 ## 5. Bug 明细
 
@@ -135,9 +137,27 @@ App 版本:        versionName (versionCode)
 - **状态：** FIXED（2026-08-01）
 - **复现：** 真机完成分析 → 推荐页显示空状态/无候选（Room song_metadata 表为空）
 - **根因：** 数据集 `mvp-songs.json` 位于 data:songs JVM resources，`SongImportRepository` 无任何运行时调用方（仅 CLI/测试使用）——M6 验收只验证了仓库层，未验证应用启动装载；此前白屏（BUG-014）掩盖了该问题
-- **修复：** ① 数据集移至 `data/songs/src/main/assets/songs/mvp-songs.json`（Android 资产打包，CLI/测试改路径）；② `MatchSongApplication.ensureSongCatalog()` 启动异步幂等导入（版本比对跳过/事务替换），失败仅记日志不阻塞（推荐页空态降级）
+- **修复：** ① 数据集移至 `data/songs/src/main/assets/songs/mvp-songs.json`（Android 资产打包，CLI/测试改路径）；② `MatchSongApplication.ensureSongCatalog()` 启动异步幂等导入（版本比对跳过/事务替换；BUG-018 后改为**仅空库**导入，尊重用户歌曲包），失败仅记日志不阻塞（推荐页空态降级）
 - **测试：** `SongCatalogSeedTest`（仪器测试）：经 main 源码 @EntryPoint 查真实 DB，轮询断言 50 首落库；release 冒烟 logcat 确认"歌曲目录就绪：50 首"
 - **已知边界：** 导入为异步——极快用户可能在导入完成前进推荐页看到空态（50 行导入 <100ms，可接受）；下次启动/重试即正常
+
+### BUG-017 停止录音后必现"录音文件不可用"
+
+- **严重级别：** P1（主流程完全中断）
+- **状态：** FIXED（2026-08-01，真机反馈）
+- **复现：** 真机任意录音 → 停止 → 必现"录音文件不可用，请重新录制"；重录同样失败
+- **根因：** 停止路径 `RecordingService.onStartCommand(ACTION_STOP)` → `runner.stop()` → `stopSelf()` → `onDestroy()` → `release()`。M9.2 给 release() 加了 `instance = null` + `cleanupSessionFiles()`——服务销毁时**置空静态实例并删除刚录好的 WAV**；UI 在 COMPLETED 后读 `RecordingSessionRunner.instance?.lastWavFile` → null → 防御态误触发（模拟器时序侥幸通过，真机必现）
+- **修复：** release() 仅做幂等收尾（recorder.stop + abandonFocus）；不置空 instance（单例可复用）、不取消 scope（支持再次录音）、不删除文件（删除归分析流程钩子 + 启动残留清理）
+- **测试：** 编译 + 仪器 22/22 + release 冒烟；真机路径无法在模拟器确定性复现（竞态），已按代码路径修复
+
+### BUG-018 曲库仅 50 首且无法扩展（联网歌曲包）
+
+- **严重级别：** P2（功能增强，产品要求）
+- **状态：** FIXED（2026-08-01）
+- **需求：** 曲库太小；希望联网扩展 + 专攻方向（如周杰伦、抽象）
+- **实现：** ① INTERNET 权限（仅下载，无上传，FR-PRIV-3 保持）；② `HttpSongPackFetcher`（HTTPS GET、15s 超时、5MB 上限、零新运行时依赖）+ `SongPackImporter` 复用 `SongImportRepository`（版本比对事务替换）；③ 设置页"歌曲包"区块（URL 输入 + 下载 + 当前曲库数 + 结果提示）；④ 启动内置导入改为**仅空库**执行（用户导入包后不被覆盖）；⑤ 示例包 `song-packs/zhou-jaylen-pack.json`（周杰伦 8 首，raw 托管，公开仓库）
+- **测试：** HttpSongPackFetcherTest（MockWebServer 200/404）、SongPackImporterTest（替换/失败不落库/非法 JSON）；release 真机链路模拟器验证：下载→校验→"导入成功：8 首（替换原曲库）"，曲库 50→8
+- **已知边界：** 导入为**替换**语义（切换曲库而非叠加）；包内容为推导元数据 [推测]，不宣称准确率；生产包需自行确认版权合规（song-packs/README.md）
 
 ---
 
