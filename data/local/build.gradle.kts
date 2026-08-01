@@ -18,6 +18,9 @@ android {
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
+        // M9.4 修复：库模块默认 legacy runner（android.test.InstrumentationTestRunner）已在 API 28+
+        // 移除，API 36 上 instrumentation 启动即崩溃——统一使用 androidx AndroidJUnitRunner
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     compileOptions {
@@ -63,4 +66,7 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.room.testing)
     androidTestImplementation(libs.androidx.test.ext.junit)
+    // M9.4 修复：AndroidJUnitRunner 为独立 artifact（ext.junit 不再传递引入），
+    // 库模块 connected 测试需要显式声明，否则 runner 类缺失启动崩溃
+    androidTestImplementation(libs.androidx.test.runner)
 }

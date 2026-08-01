@@ -49,7 +49,7 @@ object WavFileWriter {
     ): File {
         validateFormat(sampleRateHz, channels, bitsPerSample)
         val dataSize = pcmFile.length()
-        if (!pcmFile.isFile) throw IOException("PCM 文件不存在：$pcmFile")
+        if (!pcmFile.isFile) throw IOException("PCM 文件不存在：${pcmFile.name}")
         if (dataSize > Int.MAX_VALUE) throw IOException("PCM 过大，WAV dataSize 超出 Int 范围：$dataSize 字节")
 
         wavFile.parentFile?.mkdirs()

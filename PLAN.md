@@ -1869,6 +1869,8 @@ MVP 建议包含：
 
 ### M9.1 数据清单
 
+**状态：** `DONE`（2026-08-01，数据清单审计：Room 5 表 / DataStore 2 文件 / 文件缓存与实现逐一核对；PRIVACY.md 定稿 v1.0）
+
 记录：
 
 - 收集的数据；
@@ -1889,6 +1891,8 @@ PRIVACY.md
 
 ### M9.2 原始录音生命周期
 
+**状态：** `DONE`（2026-08-01，分析完成/重录/失败/服务销毁均触发 cleanupSessionFiles()；启动清理沿用 M3.5-2；删除失败记录安全错误日志）
+
 实现：
 
 - 默认临时保存；
@@ -1901,6 +1905,8 @@ PRIVACY.md
 ---
 
 ### M9.3 数据删除
+
+**状态：** `DONE`（2026-08-01，DeleteAllDataUseCase + SettingsViewModel/SettingsScreen 全操作接线；单条历史删除沿用 M8.4；DataStore clear + RecordingFileManager clearAll；重置回首次启动 ACC-15；测试：用例 3 场景 + Robolectric DataStore + FileManager clearAll + Fake 契约）
 
 用户可以：
 
@@ -1916,6 +1922,8 @@ PRIVACY.md
 ---
 
 ### M9.4 安全检查
+
+**状态：** `DONE`（2026-08-01，审计结论见 SECURITY.md §4：Exported Component/Intent/FileProvider/日志脱敏/备份/网络配置/依赖逐项合规；allowBackup=false + networkSecurityConfig；AndroidLogLogger 全量脱敏含堆栈；Runner/Application 注入统一 Logger；修复 M8 遗留破损 import 与 ktlint 违规）
 
 检查：
 
@@ -1936,6 +1944,8 @@ PRIVACY.md
 
 ### M9.5 Play Store 合规
 
+**状态：** `DONE`（2026-08-01，docs/compliance/play-store-materials.md：数据安全表单 / 权限声明 / 隐私政策 / 删除说明 / 未成年人声明；M11 发布前随商店流程复核定稿）
+
 准备：
 
 - 麦克风权限说明；
@@ -1949,12 +1959,14 @@ PRIVACY.md
 
 ## 15.3 M9 退出条件
 
-- 没有静默录音路径；
-- 原始录音默认不永久保存；
-- 用户可以删除所有个人数据；
-- Release 日志不包含敏感信息；
-- 安全审计无高严重度问题；
-- 隐私文档与实际代码一致。
+- 没有静默录音路径；（✅ 录音必须伴随可见 UI + 前台通知，FR-REC-9，M3 验证）
+- 原始录音默认不永久保存；（✅ 分析完成即删 + 启动残留清理，M9.2/ACC-14）
+- 用户可以删除所有个人数据；（✅ 粒度删除 + 重置应用，M9.3/ACC-15）
+- Release 日志不包含敏感信息；（✅ 全量脱敏含堆栈，M9.4）
+- 安全审计无高严重度问题；（✅ 审计结论见 SECURITY.md §4）
+- 隐私文档与实际代码一致。（✅ PRIVACY.md 定稿 v1.0，M9.1）
+
+**M9 验收记录：** `docs/milestones/M9-acceptance.md`（2026-08-01）
 
 ---
 

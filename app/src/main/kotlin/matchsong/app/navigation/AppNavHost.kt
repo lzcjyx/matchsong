@@ -1,7 +1,5 @@
 package matchsong.app.navigation
 
-import AnalyzingViewModel
-import QualityResultViewModel
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,12 +16,14 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import matchsong.app.feature.analyzing.AnalyzingScreen
+import matchsong.app.feature.analyzing.AnalyzingViewModel
 import matchsong.app.feature.favorites.FavoritesScreen
 import matchsong.app.feature.history.HistoryScreen
 import matchsong.app.feature.home.HomeScreen
 import matchsong.app.feature.onboarding.OnboardingScreen
 import matchsong.app.feature.onboarding.OnboardingViewModel
 import matchsong.app.feature.quality.QualityResultScreen
+import matchsong.app.feature.quality.QualityResultViewModel
 import matchsong.app.feature.recommendation.RecommendationDetailScreen
 import matchsong.app.feature.recommendation.RecommendationListScreen
 import matchsong.app.feature.recording.PrepareScreen
@@ -124,6 +124,8 @@ fun AppNavHost(
                         report = report,
                         onAnalyze = { navController.navigate(Routes.ANALYZING) { popUpTo(Routes.RECORDING) } },
                         onRetry = {
+                            // M9.2：重录前清理本会话录音文件（FR-PRIV-1）
+                            matchsong.core.audio.android.RecordingSessionRunner.instance?.cleanupSessionFiles()
                             flowSession.reset()
                             navController.navigate(Routes.PREPARE) { popUpTo(Routes.RECORDING) }
                         },
@@ -132,7 +134,11 @@ fun AppNavHost(
                 is QualityResultViewModel.UiState.Error ->
                     matchsong.app.design.components.state.ErrorState(
                         message = (qualityState as QualityResultViewModel.UiState.Error).message,
-                        onRetry = { navController.navigate(Routes.PREPARE) { popUpTo(Routes.RECORDING) } },
+                        onRetry = {
+                            matchsong.core.audio.android.RecordingSessionRunner.instance?.cleanupSessionFiles()
+                            flowSession.reset()
+                            navController.navigate(Routes.PREPARE) { popUpTo(Routes.RECORDING) }
+                        },
                     )
                 QualityResultViewModel.UiState.Idle -> Unit
             }
@@ -152,6 +158,9 @@ fun AppNavHost(
                     flowSession.setAnalysisResult(
                         (analyzingState as AnalyzingViewModel.UiState.Done).result,
                     )
+                    // M9.2/ACC-14：分析完成即删除原始音频（.pcm/.wav），仅保留派生特征与历史摘要
+                    matchsong.core.audio.android.RecordingSessionRunner.instance?.cleanupSessionFiles()
+                    flowSession.setWavFile(null)
                     navController.navigate(Routes.VOICE_RESULT) { popUpTo(Routes.QUALITY_RESULT) }
                 }
             }
@@ -169,6 +178,7 @@ fun AppNavHost(
                 result = analysisResult,
                 onSeeRecommendations = { navController.navigate(Routes.RECOMMENDATION_LIST) },
                 onRetry = {
+                    matchsong.core.audio.android.RecordingSessionRunner.instance?.cleanupSessionFiles()
                     flowSession.reset()
                     navController.navigate(Routes.PREPARE) { popUpTo(Routes.RECORDING) }
                 },
@@ -188,6 +198,7 @@ fun AppNavHost(
                 state = recState,
                 onSongClick = { songId -> navController.navigate(Routes.recommendationDetail(songId)) },
                 onRetry = {
+                    matchsong.core.audio.android.RecordingSessionRunner.instance?.cleanupSessionFiles()
                     flowSession.reset()
                     navController.navigate(Routes.PREPARE) { popUpTo(Routes.RECORDING) }
                 },
@@ -218,9 +229,15 @@ fun AppNavHost(
         }
         composable(Routes.SETTINGS) { SettingsScreen(onDeleteAll = { navController.navigate(Routes.DELETE_CONFIRM) }) }
         composable(Routes.DELETE_CONFIRM) {
-            DeleteConfirmScreen(onConfirm = {
-                navController.popBackStack(Routes.SETTINGS, inclusive = false)
-            }, onCancel = { navController.popBackStack() })
+            DeleteConfirmScreen(
+                // M9.3/ACC-15：删除全部数据成功 → 清空返回栈回 Splash → 重新 Onboarding（首次启动状态）
+                onResetCompleted = {
+                    navController.navigate(Routes.SPLASH) {
+                        popUpTo(navController.graph.id) { inclusive = true }
+                    }
+                },
+                onCancel = { navController.popBackStack() },
+            )
         }
     }
 }

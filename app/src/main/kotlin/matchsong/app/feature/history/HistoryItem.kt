@@ -10,8 +10,6 @@ import java.time.format.DateTimeFormatter
 /**
  * M8.4-2 历史列表条目展示格式化（时间 / 稳定音域摘要 / 置信度）。
  */
-
-// 记录时间展示格式（本地时区，分钟精度）（本地时区，分钟精度）。 */
 private val TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
 // 记录时间展示文案（epoch 毫秒 → 本地时间）

@@ -44,7 +44,7 @@ class RecordingFileManager(
         return try {
             when {
                 !dir.isDirectory && !dir.mkdirs() -> {
-                    Failure(StorageError.Io(IOException("无法创建录音目录：$dir")))
+                    Failure(StorageError.Io(IOException("无法创建录音目录：${dir.name}")))
                 }
                 freeSpaceProvider(dir) < MIN_FREE_BYTES_FOR_SESSION -> {
                     Failure(StorageError.NoSpace)
@@ -123,6 +123,24 @@ class RecordingFileManager(
         }?.forEach { file ->
             val sessionId = file.name.removeSuffix(PCM_SUFFIX).removeSuffix(WAV_SUFFIX)
             if (sessionId !in activeSessionIds && file.lastModified() < cutoffMs && file.delete()) {
+                deleted++
+            }
+        }
+        return deleted
+    }
+
+    /**
+     * M9.3 清空录音缓存目录全部 .pcm/.wav（删除全部数据，FR-PRIV-5/ACC-15）。
+     * 尽力而为：单文件删除失败跳过；目录不存在时返回 0。
+     */
+    override suspend fun clearAll(): Int {
+        val dir = recordingsDir
+        if (!dir.isDirectory) return 0
+        var deleted = 0
+        dir.listFiles { file ->
+            file.isFile && (file.name.endsWith(PCM_SUFFIX) || file.name.endsWith(WAV_SUFFIX))
+        }?.forEach { file ->
+            if (file.delete()) {
                 deleted++
             }
         }

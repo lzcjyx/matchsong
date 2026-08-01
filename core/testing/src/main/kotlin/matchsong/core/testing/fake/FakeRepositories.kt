@@ -102,6 +102,12 @@ class FakeSettingsRepository(
     override suspend fun setOnboardingCompleted(completed: Boolean) {
         onboardingCompleted = completed
     }
+
+    /** M9.3 清空设置与 Onboarding 标记（删除全部数据，FR-HX-4/ACC-15）。 */
+    override suspend fun clear() {
+        settings = UserSettings()
+        onboardingCompleted = false
+    }
 }
 
 /**

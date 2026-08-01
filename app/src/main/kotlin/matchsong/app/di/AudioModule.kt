@@ -13,6 +13,7 @@ import matchsong.core.audio.android.AndroidRecordingPort
 import matchsong.core.audio.android.RecordingFileManager
 import matchsong.core.audio.android.RecordingSessionRunner
 import matchsong.core.audio.api.AudioRecorder
+import matchsong.core.common.log.Logger
 import matchsong.domain.recording.PermissionStateMachine
 import matchsong.domain.recording.RecordingPort
 import java.io.File
@@ -31,15 +32,16 @@ import javax.inject.Singleton
 object AudioModule {
     @Provides
     @Singleton
-    fun provideAudioRecorder(): AudioRecorder = AndroidAudioRecorder()
+    fun provideAudioRecorder(logger: Logger): AudioRecorder = AndroidAudioRecorder(logger = logger)
 
     @Provides
     @Singleton
     fun provideRecordingSessionRunner(
         recorder: AudioRecorder,
         fileManager: RecordingFileManager,
+        logger: Logger,
     ): RecordingSessionRunner =
-        RecordingSessionRunner(recorder, fileManager).also { RecordingSessionRunner.instance = it }
+        RecordingSessionRunner(recorder, fileManager, logger).also { RecordingSessionRunner.instance = it }
 
     @Provides
     @Singleton

@@ -46,6 +46,9 @@ complexity:
     active: true
     thresholdInFiles: 20
     thresholdInClasses: 20
+    # AppModule/AudioModule 等 DI 容器 object：@Provides 函数为声明式装配清单（M9 增至 11+），
+    # 拆散反而破坏可读性；每个函数均为独立绑定，职责单一
+    thresholdInObjects: 20
   CyclomaticComplexMethod:
     active: true
     # RecordingStateMachine.onEvent：事件×状态的转移矩阵天然高分支（22），

@@ -1,13 +1,13 @@
 package matchsong.app
 
 import android.app.Application
-import android.util.Log
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import matchsong.core.common.log.Logger
 import matchsong.domain.recording.CleanupStaleRecordingsUseCase
 import javax.inject.Inject
 
@@ -19,6 +19,10 @@ class MatchSongApplication : Application() {
     /** M3.5-2 过期录音残留清理用例（FR-REC-8，ARCHITECTURE.md §7.3/§11）。 */
     @Inject
     lateinit var cleanupStaleRecordingsUseCase: CleanupStaleRecordingsUseCase
+
+    /** M1.4-3 统一日志（Release 自动脱敏 FR-PRIV-4，M9.4 接入应用入口日志）。 */
+    @Inject
+    lateinit var logger: Logger
 
     /** 应用级作用域：随进程存活，仅承载启动清理等一次性后台任务。 */
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -36,11 +40,11 @@ class MatchSongApplication : Application() {
         appScope.launch {
             try {
                 val deleted = cleanupStaleRecordingsUseCase()
-                Log.d(TAG, "启动清理过期录音残留：删除 $deleted 个文件")
+                logger.d(TAG, "启动清理过期录音残留：删除 $deleted 个文件")
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                Log.w(TAG, "启动清理过期录音残留失败", e)
+                logger.w(TAG, "启动清理过期录音残留失败", e)
             }
         }
     }

@@ -1,7 +1,6 @@
 package matchsong.core.audio.android
 
 import android.content.Context
-import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -21,6 +20,8 @@ import matchsong.core.audio.algorithm.VolumeMeter
 import matchsong.core.audio.algorithm.throttledVolume
 import matchsong.core.audio.api.AudioRecorder
 import matchsong.core.audio.api.RecordingConfig
+import matchsong.core.common.log.Logger
+import matchsong.core.common.result.OperationResult
 import matchsong.domain.recording.RecordingEvent
 import matchsong.domain.recording.RecordingFailureReason
 import matchsong.domain.recording.RecordingPort
@@ -40,6 +41,7 @@ import matchsong.domain.recording.VolumeLevel
 class RecordingSessionRunner(
     private val recorder: AudioRecorder,
     private val fileManager: RecordingFileManager? = null,
+    private val logger: Logger = AndroidLogLogger(),
 ) : RecordingPort {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -143,13 +145,13 @@ class RecordingSessionRunner(
                         pcmSink = java.io.DataOutputStream(pcmFile!!.outputStream())
                     }
                     is matchsong.core.common.result.OperationResult.Failure -> {
-                        Log.e(TAG, "创建 PCM 文件失败：${created.error}")
+                        logger.e(TAG, "创建 PCM 文件失败：${created.error}")
                         pcmSink = null
                     }
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "打开 PCM 输出失败（录音继续但不落盘）", e)
+            logger.e(TAG, "打开 PCM 输出失败（录音继续但不落盘）", e)
             pcmSink = null
         }
     }
@@ -159,7 +161,7 @@ class RecordingSessionRunner(
             pcmSink?.flush()
             pcmSink?.close()
         } catch (e: Exception) {
-            Log.e(TAG, "关闭 PCM 输出失败", e)
+            logger.e(TAG, "关闭 PCM 输出失败", e)
         } finally {
             pcmSink = null
         }
@@ -169,9 +171,9 @@ class RecordingSessionRunner(
     private fun finalizeWav() {
         val manager = fileManager ?: return
         when (val result = manager.finalizeWav(sessionId)) {
-            is matchsong.core.common.result.OperationResult.Success -> lastWavFile = result.data
-            is matchsong.core.common.result.OperationResult.Failure ->
-                Log.e(TAG, "WAV 封装失败：${result.error}")
+            is OperationResult.Success -> lastWavFile = result.data
+            is OperationResult.Failure ->
+                logger.e(TAG, "WAV 封装失败：${result.error}")
         }
     }
 
@@ -207,14 +209,35 @@ class RecordingSessionRunner(
     }
 
     private fun onFocusLost() {
-        Log.i(TAG, "音频焦点丢失，录音中断")
+        logger.i(TAG, "音频焦点丢失，录音中断")
         stop(interrupted = true)
+    }
+
+    /**
+     * M9.2 删除当前会话的 .pcm/.wav（分析完成/取消/失败后调用，FR-PRIV-1/ACC-14）。
+     *
+     * 调用约定：仅允许在录音已停止（录音完成、分析消费结束、取消、失败或服务销毁）
+     * 后调用——进行中会话的文件删除由调用方保证时序（AppNavHost 在分析完成/重录时调用，
+     * [release] 在采集停止后调用）。幂等：无会话或文件不存在时无操作；
+     * 删除失败记录安全错误日志（M9.2），不抛出。
+     */
+    fun cleanupSessionFiles() {
+        val manager = fileManager ?: return
+        if (sessionId.isEmpty()) return
+        when (val result = manager.deleteSessionFiles(sessionId)) {
+            is OperationResult.Success -> lastWavFile = null
+            is OperationResult.Failure ->
+                logger.e(TAG, "删除录音临时文件失败（安全错误）：${result.error}")
+        }
     }
 
     fun release() {
         scope.cancel()
         recorder.stop()
+        closePcmSink()
         focusManager?.abandonFocus()
+        // M9.2：服务销毁时清理本会话残留（分析未消费的 .pcm/.wav），防敏感数据残留
+        cleanupSessionFiles()
         instance = null
     }
 }

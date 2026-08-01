@@ -12,6 +12,9 @@ interface SettingsRepository {
     suspend fun isOnboardingCompleted(): Boolean
 
     suspend fun setOnboardingCompleted(completed: Boolean)
+
+    /** 清空全部设置与 Onboarding 标记（删除全部数据，FR-HX-4/ACC-15）。 */
+    suspend fun clear()
 }
 
 /** 用户设置最小占位模型（data-model.md §7.2 UserSettings；M2/M6 细化）。 */

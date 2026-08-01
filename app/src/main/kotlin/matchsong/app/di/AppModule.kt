@@ -15,6 +15,7 @@ import matchsong.domain.analysis.RecordAnalysisUseCase
 import matchsong.domain.port.AnalysisHistoryRepository
 import matchsong.domain.port.ConsentRepository
 import matchsong.domain.port.FavoritesRepository
+import matchsong.domain.port.FeedbackRepository
 import matchsong.domain.port.RecordingFileCleaner
 import matchsong.domain.port.SettingsRepository
 import matchsong.domain.port.SongRepository
@@ -23,6 +24,7 @@ import matchsong.domain.recommendation.GetRecommendationsUseCase
 import matchsong.domain.recommendation.ToggleFavoriteUseCase
 import matchsong.domain.recording.CleanupStaleRecordingsUseCase
 import matchsong.domain.usecase.AcceptConsentUseCase
+import matchsong.domain.usecase.DeleteAllDataUseCase
 import matchsong.domain.usecase.GetOnboardingStatusUseCase
 import java.io.File
 import javax.inject.Provider
@@ -115,4 +117,27 @@ object AppModule {
         historyRepository: AnalysisHistoryRepository,
         clock: Clock,
     ): RecordAnalysisUseCase = RecordAnalysisUseCase(historyRepository, clock)
+
+    /**
+     * M9.3 删除全部数据用例绑定（FR-PRIV-5/ACC-15）：
+     * 清空历史/收藏/反馈/设置/同意/录音缓存，恢复首次启动状态。
+     */
+    @Provides
+    @Singleton
+    fun provideDeleteAllDataUseCase(
+        historyRepository: AnalysisHistoryRepository,
+        favoritesRepository: FavoritesRepository,
+        feedbackRepository: FeedbackRepository,
+        settingsRepository: SettingsRepository,
+        consentRepository: ConsentRepository,
+        fileCleaner: RecordingFileCleaner,
+    ): DeleteAllDataUseCase =
+        DeleteAllDataUseCase(
+            historyRepository = historyRepository,
+            favoritesRepository = favoritesRepository,
+            feedbackRepository = feedbackRepository,
+            settingsRepository = settingsRepository,
+            consentRepository = consentRepository,
+            fileCleaner = fileCleaner,
+        )
 }

@@ -190,4 +190,27 @@ class RecordingFileManagerTest {
             assertEquals(0, m.cleanStale(olderThanMs = 60 * 60 * 1000L, activeSessionIds = emptySet()))
             assertTrue(junk.exists())
         }
+
+    // ---------- clearAll（M9.3，FR-PRIV-5/ACC-15） ----------
+
+    @Test
+    fun `clearAll 清空全部 pcm 与 wav`() =
+        runTest {
+            val m = manager()
+            m.createSessionFiles("a")
+            m.createSessionFiles("b")
+            m.finalizeWav("a")
+            File(tempDir, "recordings/keep.txt").writeText("junk")
+
+            assertEquals(3, m.clearAll())
+            val remaining = File(tempDir, "recordings").listFiles().orEmpty().map { it.name }.sorted()
+            assertEquals(listOf("keep.txt"), remaining, "非录音文件应保留")
+        }
+
+    @Test
+    fun `clearAll 目录不存在时返回 0`() =
+        runTest {
+            val m = RecordingFileManager(File(tempDir, "not-created"), { Long.MAX_VALUE })
+            assertEquals(0, m.clearAll())
+        }
 }

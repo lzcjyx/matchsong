@@ -16,10 +16,12 @@ import matchsong.data.local.db.dao.FeedbackDao
 import matchsong.data.local.db.dao.SongDao
 import matchsong.data.local.repository.RoomAnalysisHistoryRepository
 import matchsong.data.local.repository.RoomFavoritesRepository
+import matchsong.data.local.repository.RoomFeedbackRepository
 import matchsong.data.local.repository.RoomSongRepository
 import matchsong.data.local.settings.DataStoreSettingsRepository
 import matchsong.domain.port.AnalysisHistoryRepository
 import matchsong.domain.port.FavoritesRepository
+import matchsong.domain.port.FeedbackRepository
 import matchsong.domain.port.SettingsRepository
 import matchsong.domain.port.SongRepository
 import javax.inject.Singleton
@@ -69,6 +71,11 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideAnalysisHistoryRepository(repo: RoomAnalysisHistoryRepository): AnalysisHistoryRepository = repo
+
+    /** M8.5-1 反馈仓库 Port 绑定（Room 实现；M9.3 删除全部数据消费）。 */
+    @Provides
+    @Singleton
+    fun provideFeedbackRepository(repo: RoomFeedbackRepository): FeedbackRepository = repo
 
     @Provides
     @Singleton

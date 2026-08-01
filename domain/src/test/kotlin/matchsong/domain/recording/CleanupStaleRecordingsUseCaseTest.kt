@@ -36,6 +36,12 @@ class CleanupStaleRecordingsUseCaseTest {
             stale.keys.forEach { files.remove(it) }
             return stale.size
         }
+
+        override suspend fun clearAll(): Int {
+            val count = files.size
+            files.clear()
+            return count
+        }
     }
 
     private fun now() = System.currentTimeMillis()

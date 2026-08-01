@@ -30,11 +30,11 @@ class FavoriteToggleViewModel
         private val toggleFavorite: ToggleFavoriteUseCase,
         private val getFavoriteSongIds: GetFavoriteSongIdsUseCase,
     ) : ViewModel() {
-        private val _songId = MutableStateFlow<String?>(null)
+        private val songIdFlow = MutableStateFlow<String?>(null)
 
         /** 当前歌曲是否已收藏（Flow 实时同步）。 */
-        val isFavorite: StateFlow<Boolean> =
-            _songId
+        val favoriteState: StateFlow<Boolean> =
+            songIdFlow
                 .flatMapLatest { songId ->
                     if (songId == null) flowOf(false) else getFavoriteSongIds().map { it.contains(songId) }
                 }.stateIn(
@@ -45,12 +45,12 @@ class FavoriteToggleViewModel
 
         /** 绑定目标歌曲（进入详情页时调用；songId 变化自动重订阅）。 */
         fun setSong(songId: String) {
-            _songId.value = songId
+            songIdFlow.value = songId
         }
 
         /** 收藏/取消收藏。 */
         fun toggle() {
-            val songId = _songId.value ?: return
+            val songId = songIdFlow.value ?: return
             viewModelScope.launch { toggleFavorite(songId) }
         }
     }

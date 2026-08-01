@@ -22,4 +22,10 @@ interface RecordingFileCleaner {
         olderThanMs: Long,
         activeSessionIds: Set<String>,
     ): Int
+
+    /**
+     * 清空录音缓存目录中的全部 .pcm/.wav（删除全部数据，FR-PRIV-5/ACC-15）。
+     * 尽力而为：单文件删除失败跳过，返回实际删除的文件数。
+     */
+    suspend fun clearAll(): Int
 }

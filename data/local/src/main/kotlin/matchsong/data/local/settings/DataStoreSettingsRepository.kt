@@ -55,4 +55,9 @@ class DataStoreSettingsRepository
                 prefs[Keys.ONBOARDING_DONE] = completed.toString()
             }
         }
+
+        /** M9.3 清空全部设置与 Onboarding 标记（删除全部数据，FR-HX-4/ACC-15）。 */
+        override suspend fun clear() {
+            context.settingsDataStore.edit { prefs -> prefs.clear() }
+        }
     }

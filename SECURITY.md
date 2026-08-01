@@ -22,14 +22,33 @@ MVP 为**无网络权限、无后端、无 API Key** 的本地单机应用（SPE
 
 | 风险 | 缓解措施 | 状态 |
 |---|---|---|
-| 依赖漏洞 | OWASP Dependency-Check（`dependencyCheckAnalyze`）+ Gradle Versions（`dependencyUpdates`）扫描（M1.2-3 落地）；原则：已知高危漏洞要么升级依赖、要么记录理由，不得掩盖（PLAN M1.2）；CI 接入（M1.3） | 计划（M1.2-3） |
-| 日志信息泄漏 | Release 日志脱敏（FR-PRIV-4）：禁止输出文件路径、设备标识、任何原始音频样本与内容；仅允许聚合指标与错误类型；R8 移除 debug 日志调用（ARCHITECTURE.md §13） | 设计已冻结（M1.4-3 实现） |
-| 敏感数据残留 | 原始音频仅存 cache 临时文件、分析完成即删（FR-PRIV-1）；逐帧音高轨迹不持久化；历史仅存派生摘要（FR-HX-1）；建议 Room 启用 SQLCipher 加密派生特征（data-model.md §4.4，`[推测-实现建议]`） | 设计已冻结（M9 细化） |
-| 权限滥用 | 权限最小化：仅 RECORD_AUDIO + FOREGROUND_SERVICE(+_MICROPHONE)（SPEC §10.5）；录音必须伴随可见 UI + 前台通知，不静默录音（FR-REC-9） | 设计已冻结（M2/M3 实现） |
+| 依赖漏洞 | OWASP Dependency-Check（`dependencyCheckAnalyze`）+ Gradle Versions（`dependencyUpdates`）扫描（M1.2-3 落地）；原则：已知高危漏洞要么升级依赖、要么记录理由，不得掩盖（PLAN M1.2）；CI 接入（M1.3） | 已落地（M1.2-3/M1.3，CI 持续执行） |
+| 日志信息泄漏 | Release 日志脱敏（FR-PRIV-4）：禁止输出文件路径、设备标识、任何原始音频样本与内容；仅允许聚合指标与错误类型；R8 移除 debug 日志调用（ARCHITECTURE.md §13） | **已落地（M9.4）**：AndroidLogLogger 全部输出经 LogRedactor 脱敏（含堆栈序列化后脱敏）；RecordingSessionRunner/MatchSongApplication 统一注入 Logger；WavFileWriter/RecordingFileManager 错误消息源头不再含绝对路径 |
+| 敏感数据残留 | 原始音频仅存 cache 临时文件、分析完成即删（FR-PRIV-1）；逐帧音高轨迹不持久化；历史仅存派生摘要（FR-HX-1）；`allowBackup=false` 禁止 Room 敏感特征随云备份/ADB 备份外泄 | **已落地（M9.2/M9.4）**：分析完成/重录/失败/服务销毁均触发 `cleanupSessionFiles()`；启动清理残留（M3.5-2）；manifest `allowBackup=false` + networkSecurityConfig 禁明文 |
+| 权限滥用 | 权限最小化：仅 RECORD_AUDIO + FOREGROUND_SERVICE(+_MICROPHONE)（SPEC §10.5）；录音必须伴随可见 UI + 前台通知，不静默录音（FR-REC-9） | 已落地（M2/M3 实现） |
 | 密钥/令牌 | 应用内不存储任何 API Key 或令牌（MVP 无后端、无网络权限） | 适用 |
-| 删除流程缺陷 | 全链路删除可测（FR-PRIV-5）：单条/全部历史、收藏、设置、缓存音频、重置应用；删除全部数据后恢复首次启动（ACC-15） | 设计已冻结（M3+ 实现） |
+| 删除流程缺陷 | 全链路删除可测（FR-PRIV-5）：单条/全部历史、收藏、设置、缓存音频、重置应用；删除全部数据后恢复首次启动（ACC-15） | **已落地（M9.3）**：DeleteAllDataUseCase + SettingsViewModel/SettingsScreen 全操作接线；Robolectric/单测覆盖 DataStore clear、RecordingFileManager clearAll、Fake 契约 |
 
-## 4. 安全实践
+## 4. M9.4 安全检查记录（2026-08-01）
+
+| 检查项 | 结论 | 说明 |
+|---|---|---|
+| Exported Component | ✅ 合规 | 仅 MainActivity（LAUNCHER，必需 exported=true）；RecordingService exported=false；无 Receiver/Provider |
+| Intent 输入 | ✅ 合规 | 无外部 Intent 处理（无 exported 组件接收外部 Intent） |
+| FileProvider | ✅ 不适用 | MVP 无文件分享/导出功能，未声明 FileProvider |
+| PendingIntent | ✅ 不适用 | 仅前台服务通知「停止」动作（Activity 启动式，无隐式 PendingIntent 风险） |
+| Service 权限 | ✅ 合规 | 前台服务仅麦克风类型，exported=false；录音必须伴随可见 UI + 前台通知（FR-REC-9） |
+| 日志脱敏 | ✅ 已修复 | AndroidLogLogger 全量脱敏（含堆栈）；Runner/Application 统一注入 Logger；错误消息源头去绝对路径 |
+| Debug 工具进 Release | ✅ 合规 | core:testing 仅 debugImplementation；Fake 绑定仅在 debug source set；Release 无测试/Fake 代码（FR-SHELL-3） |
+| 数据库文件 | ✅ 已加固 | `allowBackup=false` 禁止备份外泄；文件位于应用私有目录（data/data） |
+| 网络安全配置 | ✅ 已声明 | `network_security_config.xml` 显式禁明文；MVP 无网络权限 |
+| 第三方 SDK | ✅ 合规 | 无广告/分析/网络 SDK（依赖清单见 gradle/libs.versions.toml） |
+| API Key | ✅ 合规 | 仓库与运行时不存任何密钥（MVP 无后端） |
+| 依赖漏洞 | ✅ CI 覆盖 | dependencyCheckAnalyze + Gradle Versions 于 CI 持续执行（M1.3） |
+
+遗留：Room 未启用 SQLCipher（data-model §4.4 `[推测-实现建议]`）——MVP 本地威胁面低（无备份/无网络），列为 M10 可选优化项。
+
+## 5. 安全实践
 
 1. **失败测试先行**：修复 Bug 必须先添加失败测试（PLAN §16.3、§18 步骤 10）；
 2. **最小修复**：按最小改动实施修复，不夹带无关变更（PLAN §18 步骤 11）；
@@ -37,7 +56,7 @@ MVP 为**无网络权限、无后端、无 API Key** 的本地单机应用（SPE
 4. **静态检查**：Lint / Detekt / Ktlint 统一命令 `checkQuality`（M1.2-1 落地），CI 门禁（M1.3）；
 5. **脱敏默认**：Bug 记录与公开文档不含设备标识与音频内容（PLAN §18 步骤 5、FR-PRIV-4）。
 
-## 5. 相关文档
+## 6. 相关文档
 
 - 日志脱敏策略：`ARCHITECTURE.md` §13
 - 敏感数据处理：`docs/architecture/data-model.md` §4

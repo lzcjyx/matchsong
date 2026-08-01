@@ -24,6 +24,10 @@ class GetRecommendationsUseCaseTest {
         override suspend fun isOnboardingCompleted(): Boolean = true
 
         override suspend fun setOnboardingCompleted(c: Boolean) { /* DataStore 实现由 M9 完善 */ }
+
+        override suspend fun clear() {
+            settings = UserSettings()
+        }
     }
 
     private class FakeSongRepo(

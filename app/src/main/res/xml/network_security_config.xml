@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  M9.4 网络安全配置（FR-PRIV-3）：MVP 无网络权限、无后端；显式禁止明文流量
+  （默认行为，防御性声明：即使未来误加网络权限也不允许 cleartext）。
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>

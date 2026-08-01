@@ -72,6 +72,12 @@ class FakeRepositoriesTest {
 
             repo.setOnboardingCompleted(true)
             assertTrue(repo.isOnboardingCompleted())
+
+            // M9.3 删除全部数据 → 恢复默认 + 标记清除（ACC-15）
+            repo.clear()
+            assertEquals("zh", repo.getSettings().language)
+            assertTrue(repo.getSettings().excludedGenres.isEmpty())
+            assertFalse(repo.isOnboardingCompleted())
         }
 
     // ---- FakeFavoritesRepository ----
