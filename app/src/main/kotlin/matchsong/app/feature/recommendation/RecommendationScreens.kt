@@ -6,25 +6,22 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.hilt.navigation.compose.hiltViewModel
 import matchsong.app.design.MatchSongSpacing
 import matchsong.app.design.components.AppTopBar
 import matchsong.app.design.components.SongCard
 import matchsong.app.design.components.state.EmptyState
-
-/** M2.4-2 测试数据（详情页演示用；推荐列表已接真实引擎 M8.2-1）。 */
-data class FakeSong(val id: String, val title: String, val artist: String, val note: String)
-
-val FakeSongs =
-    listOf(
-        FakeSong("song-1", "晴天", "周杰伦", "推荐理由：大部分旋律位于你的舒适音区"),
-        FakeSong("song-2", "小幸运", "田馥甄", "推荐理由：原调最高音略高，降低 2 个半音后适合"),
-        FakeSong("song-3", "平凡之路", "朴树", "推荐理由：持续高音较少，适合当前稳定性"),
-    )
 
 /**
  * M8.2-1 推荐列表页（真实引擎数据：分数 + 解释 + 变调建议，ACC-11）。
@@ -89,14 +86,27 @@ fun RecommendationListScreen(
 }
 
 /**
- * M7 推荐详情页（M2 占位）。songId 经导航参数传入。
+ * M10.6 推荐详情页（BUG-004：由 M2 占位 Fake 数据切换为真实推荐项数据）。
+ *
+ * 数据经导航参数传递（[Routes.recommendationDetail]）：歌曲名/歌手/匹配度/
+ * 变调建议/推荐理由/推荐结果 ID（反馈关联）。反馈入口（FR-HX-3，BUG-001）：
+ * 六类反馈经 [FeedbackSheet] 提交，仅保存不调权重。
  */
 @Composable
 fun RecommendationDetailScreen(
     songId: String,
+    title: String,
+    artist: String,
+    score: Double?,
+    keyShiftSemitones: Int?,
+    explanation: String?,
+    resultId: String?,
     onBack: () -> Unit,
+    viewModel: RecommendationDetailViewModel = hiltViewModel(),
 ) {
-    val song = FakeSongs.firstOrNull { it.id == songId }
+    var showFeedback by remember { mutableStateOf(false) }
+    val submitted by viewModel.submitted.collectAsState()
+
     Column(
         modifier =
             Modifier
@@ -106,21 +116,50 @@ fun RecommendationDetailScreen(
         horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
     ) {
         AppTopBar(title = "歌曲详情", onBack = onBack)
-        if (song == null) {
-            EmptyState(text = "未找到该歌曲", actionText = "返回", onAction = onBack)
-        } else {
-            Text(text = song.title, style = MaterialTheme.typography.headlineMedium)
-            Text(text = song.artist, style = MaterialTheme.typography.titleMedium)
+        Text(text = title, style = MaterialTheme.typography.headlineMedium)
+        Text(text = artist, style = MaterialTheme.typography.titleMedium)
+        score?.let { s ->
             Text(
-                text = song.note,
+                text = "匹配度 ${s.toInt()}%",
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.padding(top = MatchSongSpacing.M),
             )
+        }
+        keyShiftSemitones?.let { shift ->
             Text(
-                text = "变调建议：-2 半音（示例）\n* 本次录音估计，非专业诊断",
+                text = if (shift < 0) "建议降 ${-shift} 半音" else "建议升 $shift 半音",
+                style = MaterialTheme.typography.bodyLarge,
+            )
+        }
+        if (!explanation.isNullOrBlank()) {
+            Text(
+                text = explanation,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = MatchSongSpacing.M),
             )
         }
+        Text(
+            text = "* 本次录音估计，非专业诊断",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.Gray,
+            modifier = Modifier.padding(top = MatchSongSpacing.M),
+        )
+        Button(
+            onClick = { showFeedback = true },
+            modifier = Modifier.padding(top = MatchSongSpacing.L),
+            enabled = !submitted,
+        ) {
+            Text(if (submitted) "已收到反馈，谢谢" else "反馈推荐结果")
+        }
+    }
+
+    if (showFeedback) {
+        FeedbackSheet(
+            onDismiss = { showFeedback = false },
+            onSubmit = { type ->
+                viewModel.submitFeedback(songId = songId, resultId = resultId, type = type)
+                showFeedback = false
+            },
+        )
     }
 }

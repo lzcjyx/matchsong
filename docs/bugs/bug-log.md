@@ -54,11 +54,48 @@ App 版本:        versionName (versionCode)
 
 | Bug ID | 标题 | 严重级别 | 设备 / Android | App 版本 | 状态 | 修复 Commit | 备注 |
 |---|---|---|---|---|---|---|---|
-| （暂无记录） | | | | | | | |
+| BUG-001 | 反馈 UI 未接线（FR-HX-3：FeedbackSheet 孤儿组件） | P1 | 全部 | 0.1.0 | FIXED | M10.6 | 详情页反馈入口 + 六类反馈提交接线 |
+| BUG-002 | 推荐详情页用 Fake 歌曲数据（无真实推荐上下文） | P2 | 全部 | 0.1.0 | FIXED | M10.6 | 真实推荐项经导航参数传递 |
+| BUG-003 | NavType.IntType 声明 nullable 导致 app 启动崩溃 | P0 | 全部 | 0.1.0（未发布） | FIXED | M10.6 | 回归捕获（E2E homeToPrepareAndBackToHome）；改 StringType+解析 |
+| BUG-004 | 真机设备矩阵未执行（硬件缺失） | P2 | 真机 | 0.1.0 | DEFERRED | — | 需低端/中端/Pixel/Samsung/中国厂商真机（device-matrix.md） |
+| BUG-005 | 数据集音域为推导（MEDIUM 可信度），推荐精度待真实数据校准 | P2 | 全部 | 0.1.0 | DEFERRED | — | M10 记录；校准需真实演唱数据积累 |
+| BUG-006 | 历史详情跳转用 popBackStack（MVP 简化，非独立详情页） | P3 | 全部 | 0.1.0 | DEFERRED | — | M9 已评估保持 |
+| BUG-007 | 设置页无语言/风格偏好配置 UI（推荐过滤退化默认） | P2 | 全部 | 0.1.0 | DEFERRED | — | M11 前补齐 |
+| BUG-008 | RecommendationResult 未携带 resultId（反馈 FK 关联缺失） | P3 | 全部 | 0.1.0 | DEFERRED | — | M10.6 发现；data-model §2.12 与实现差距 |
+| BUG-009 | Room 未启用 SQLCipher（派生特征加密） | P3 | 全部 | 0.1.0 | DEFERRED | — | 本地威胁面低；M10 评估保持 |
+| BUG-010 | 带伴奏人声子谐波锁定（YIN 已知限制） | P3 | 全部 | 0.1.0 | DEFERRED | — | M5 已记录，M11 后评估 |
+| BUG-011 | 模拟器 AVD 代理（API 26/31/34）未创建 | P2 | 模拟器 | 0.1.0 | DEFERRED | — | 兼容性验证缺口（device-matrix.md） |
+| BUG-012 | 真实录音→分析→推荐异步链路无自动化仪器覆盖 | P2 | 全部 | 0.1.0 | DEFERRED | — | Compose 测试时钟限制；真机 E2E（M11） |
 
 ## 5. Bug 明细
 
-（按 §3 模板逐条填写；一条 Bug 一个小节，按 Bug ID 升序排列）
+### BUG-001 反馈 UI 未接线
+
+- **严重级别：** P1（FR-HX-3 为 P1 需求，UI 完全缺失）
+- **状态：** FIXED（M10.6，Commit 见 M10 提交）
+- **复现：** 推荐详情页无任何反馈入口；FeedbackSheet/SubmitFeedbackUseCase 存在但无调用方
+- **根因：** M8.5 仅落地数据层与组件，未接 UI 调用链；FeedbackRepository 无 Hilt 绑定
+- **修复：** `RecommendationDetailViewModel.submitFeedback` + 详情页「反馈推荐结果」入口 + FeedbackSheet 接线；SubmitFeedbackUseCase Hilt 绑定
+- **验证：** 编译 + 仪器测试 21/21 + 手工检查表
+
+### BUG-002 推荐详情页 Fake 数据
+
+- **严重级别：** P2
+- **状态：** FIXED（M10.6）
+- **修复：** 推荐项（标题/歌手/匹配度/变调/解释/resultId）经导航参数传递；收藏入口降级仅传歌曲名/歌手
+
+### BUG-003 导航参数 nullable Int 崩溃
+
+- **严重级别：** P0（应用启动即崩溃）
+- **状态：** FIXED（M10.6，回归捕获，未发布）
+- **复现：** 声明 `navArgument(NavType.IntType) { nullable = true }` → NavHost 图构建时抛 `IllegalArgumentException: integer does not allow nullable values` → 启动崩溃（E2E homeToPrepareAndBackToHome 失败暴露）
+- **根因：** navigation-compose 仅 StringType 支持 nullable
+- **修复：** score/keyShift 改 StringType + toIntOrNull 解析；路由构建器省略 null 参数
+- **失败测试：** MainFlowE2eTest.homeToPrepareAndBackToHome（回归套件捕获）
+
+### BUG-004 ~ BUG-012（P2/P3，评估并记录后进入 Backlog）
+
+均为资源/后续里程碑项，明细见 §4 表格备注；评估结论：不阻塞 M10 退出条件（无 P0/P1 遗留）。
 
 ---
 

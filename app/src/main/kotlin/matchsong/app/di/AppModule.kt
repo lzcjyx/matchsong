@@ -21,6 +21,7 @@ import matchsong.domain.port.SettingsRepository
 import matchsong.domain.port.SongRepository
 import matchsong.domain.recommendation.GetFavoriteSongIdsUseCase
 import matchsong.domain.recommendation.GetRecommendationsUseCase
+import matchsong.domain.recommendation.SubmitFeedbackUseCase
 import matchsong.domain.recommendation.ToggleFavoriteUseCase
 import matchsong.domain.recording.CleanupStaleRecordingsUseCase
 import matchsong.domain.usecase.AcceptConsentUseCase
@@ -104,6 +105,11 @@ object AppModule {
     @Provides
     @Singleton
     fun provideToggleFavoriteUseCase(repo: FavoritesRepository): ToggleFavoriteUseCase = ToggleFavoriteUseCase(repo)
+
+    /** M10.6 反馈提交用例绑定（BUG-001：FR-HX-3 UI 接线；仅保存不调权重）。 */
+    @Provides
+    @Singleton
+    fun provideSubmitFeedbackUseCase(repo: FeedbackRepository): SubmitFeedbackUseCase = SubmitFeedbackUseCase(repo)
 
     @Provides
     @Singleton

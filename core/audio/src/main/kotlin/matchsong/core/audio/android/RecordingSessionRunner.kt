@@ -113,21 +113,32 @@ class RecordingSessionRunner(
             }
     }
 
+    /** 复用 PCM 编码缓冲（M10.2：避免逐样本 writeByte 与重复分配，PLAN §16.2 顺序 1-2）。 */
+    private var pcmEncodeBuffer: ByteArray = ByteArray(0)
+
+    /** 把一帧 float 样本编码为 little-endian 16bit PCM 并批量写入（每 chunk 一次 write）。 */
+    private fun writePcmChunk(samples: FloatArray) {
+        val sink = pcmSink ?: return
+        val bytesNeeded = samples.size * 2
+        if (pcmEncodeBuffer.size < bytesNeeded) {
+            pcmEncodeBuffer = ByteArray(bytesNeeded)
+        }
+        val buffer = pcmEncodeBuffer
+        for (i in samples.indices) {
+            val sample = (samples[i] * 32767).toInt().coerceIn(-32768, 32767)
+            buffer[i * 2] = (sample and 0xFF).toByte()
+            buffer[i * 2 + 1] = ((sample shr 8) and 0xFF).toByte()
+        }
+        sink.write(buffer, 0, bytesNeeded)
+    }
+
     private suspend fun collectFrames() {
         // M8.1-1：录音落盘（sessionId.pcm）→ 供质量/分析消费；音量节流输出（M3.6-1）
         openPcmSink()
+        val volumeMeter = VolumeMeter() // M10.2：复用实例，避免每 chunk 分配
         recorder.frames
-            .onEach { chunk ->
-                // 写 PCM（float → short → little-endian）
-                pcmSink?.let { sink ->
-                    for (v in chunk.samples) {
-                        val sample = (v * 32767).toInt().coerceIn(-32768, 32767)
-                        sink.writeByte(sample and 0xFF)
-                        sink.writeByte((sample shr 8) and 0xFF)
-                    }
-                }
-            }
-            .map { chunk -> VolumeMeter().computeVolume(chunk) }
+            .onEach { chunk -> writePcmChunk(chunk.samples) }
+            .map { chunk -> volumeMeter.computeVolume(chunk) }
             .throttledVolume(THROTTLE_MS)
             .collect { level -> _volumeFlow.tryEmit(level) }
         closePcmSink()

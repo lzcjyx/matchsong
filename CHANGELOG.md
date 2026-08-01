@@ -36,6 +36,13 @@
   - Play Store 合规材料初稿：`docs/compliance/play-store-materials.md`（数据安全表单、权限声明、隐私政策、删除说明、未成年人声明）。
   - `FeedbackRepository` 补 Hilt 绑定（M8.5 数据层存在但 UI 未接线——孤儿 `FeedbackSheet` 列为遗留风险）。
 
+- **M10 稳定性与性能优化**
+  - 性能基准（M10.1）：`docs/experiments/m10-baselines.md` + `PerfBaselineTest`（设备端 30s 分析耗时/内存）；模拟器实测：30s 分析 2795ms（目标 ≤10s）、PSS 136MB（目标 ≤200MB）、冷启动 ~2.0s（目标 ≤3s）、release APK 1.58MB。
+  - 音频性能优化（M10.2）：VolumeMeter 实例复用、PCM 批量编码写盘（缓冲复用）、ZCR 均值主循环累加；分析耗时 2866→2795ms；评估无需 NDK（PLAN §2.2 门禁不触发）。
+  - 稳定性测试（M10.4）：`StabilityTest` 快速导航 10 轮 + 屏幕旋转；回归捕获并修复 P0（导航参数 nullable Int 启动崩溃）。
+  - Bug 清零（M10.6）：`docs/bugs/bug-log.md` 全量三分类（P0×1/P1×1 修复；P2/P3×10 记录）；**反馈 UI 接线（BUG-001）与详情页真实数据（BUG-002）修复**——详情页由 M2 占位 Fake 数据切换为真实推荐项（导航参数传递），新增反馈入口（六类反馈，仅保存不调权重）。
+  - 设备矩阵（M10.3）：模拟器行实测更新；真机矩阵硬件阻塞（BUG-004 DEFERRED，M11 发布前补测）。
+
 ### 安全（Security）
 
 - 新增 `PRIVACY.md` 初稿：明确 MVP 无网络权限、无后端、无 API Key；不上传原始音频与声音特征；录音分析完成后删除（FR-PRIV-1/3）；删除流程全链路可测（FR-PRIV-5）。M9.1 数据清单落地后定稿。

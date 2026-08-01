@@ -15,11 +15,35 @@ object Routes {
     const val ANALYZING = "analyzing"
     const val VOICE_RESULT = "voice_result"
     const val RECOMMENDATION_LIST = "recommendation_list"
-    const val RECOMMENDATION_DETAIL = "recommendation_detail/{songId}"
     const val FAVORITES = "favorites"
     const val HISTORY = "history"
     const val SETTINGS = "settings"
     const val DELETE_CONFIRM = "delete_confirm"
 
-    fun recommendationDetail(songId: String): String = "recommendation_detail/$songId"
+    /** M10.6 推荐详情：真实推荐项数据经参数传递（BUG-004；feedback 关联 resultId）。 */
+    const val RECOMMENDATION_DETAIL =
+        "recommendation_detail/{songId}?title={title}&artist={artist}" +
+            "&score={score}&keyShift={keyShift}&explanation={explanation}&resultId={resultId}"
+
+    fun recommendationDetail(
+        songId: String,
+        title: String,
+        artist: String,
+        score: Int?,
+        keyShift: Int?,
+        explanation: String?,
+        resultId: String?,
+    ): String {
+        val base =
+            "recommendation_detail/$songId?title=${android.net.Uri.encode(title)}" +
+                "&artist=${android.net.Uri.encode(artist)}"
+        val query =
+            buildString {
+                score?.let { append("&score=$it") }
+                keyShift?.let { append("&keyShift=$it") }
+                if (!explanation.isNullOrBlank()) append("&explanation=${android.net.Uri.encode(explanation)}")
+                resultId?.let { append("&resultId=${android.net.Uri.encode(it)}") }
+            }
+        return base + query
+    }
 }

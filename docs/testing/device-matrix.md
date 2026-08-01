@@ -16,7 +16,7 @@
 
 | AVD | Android 版本 | API | 配置 | 可用状态 | 用途 |
 |---|---|---|---|---|---|
-| `spike_avd` | Android 16 | 36 | x86_64，google_apis，Pixel 5 配置，headless，WHPX 加速 | ✅ 可用（已验证：M-1.4 Spike 全程跑通） | 开发验证、仪器测试（权限/录音/前台服务/通知）、Compose UI 测试、E2E（Fake Audio）；性能数据仅参考[推测] |
+| `spike_avd` | Android 16 | 36 | x86_64，google_apis，Pixel 5 配置，headless，WHPX 加速 | ✅ 可用（已验证：M-1.4 Spike 全程跑通；M10.1 性能实测完成） | 开发验证、仪器测试（权限/录音/前台服务/通知）、Compose UI 测试、E2E（Fake Audio）；性能数据仅参考[推测]——**M10.1 实测**：30s 分析 2795ms（目标 ≤10s）、分析期 PSS 136MB（目标 ≤200MB）、冷启动 ~2.0s（目标 ≤3s）、release APK 1.58MB（见 docs/experiments/m10-baselines.md） |
 | 规划 AVD 代理 1 | Android 8.0 | 26 | x86_64 | 待创建（可后续 `sdkmanager` 添加系统镜像） | minSdk 下限代理：权限状态机、旧版通知行为、兼容性回归 |
 | 规划 AVD 代理 2 | Android 12/13 | 31/33 | x86_64 | 待创建 | 中版本代理：前台服务/通知行为差异、后台限制 |
 | 规划 AVD 代理 3 | Android 14 | 34 | x86_64 | 待创建 | targetSdk 邻近版本代理 |
@@ -80,3 +80,4 @@
 | 版本 | 日期 | 变更 |
 |---|---|---|
 | 0.1.0 | 2026-07-31 | 初稿（spike_avd 可用；真机待补充） |
+| 0.1.1 | 2026-08-01 | M10.1 性能实测补充（spike_avd：分析 2795ms/PSS 136MB/冷启动 ~2.0s/release 1.58MB，详见 m10-baselines.md）；真机矩阵仍待补充（M10.3 阻塞于硬件获取，已入 bug-log BUG-004） |

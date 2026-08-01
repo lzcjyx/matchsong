@@ -26,6 +26,7 @@ import matchsong.app.feature.quality.QualityResultScreen
 import matchsong.app.feature.quality.QualityResultViewModel
 import matchsong.app.feature.recommendation.RecommendationDetailScreen
 import matchsong.app.feature.recommendation.RecommendationListScreen
+import matchsong.app.feature.recommendation.RecommendationListViewModel
 import matchsong.app.feature.recording.PrepareScreen
 import matchsong.app.feature.recording.RecordingScreen
 import matchsong.app.feature.settings.DeleteConfirmScreen
@@ -196,7 +197,26 @@ fun AppNavHost(
             }
             RecommendationListScreen(
                 state = recState,
-                onSongClick = { songId -> navController.navigate(Routes.recommendationDetail(songId)) },
+                onSongClick = { songId ->
+                    // M10.6（BUG-004）：详情页切真实推荐项数据（含反馈关联 resultId）
+                    val success = recState as? RecommendationListViewModel.UiState.Success
+                    val item = success?.result?.recommendations?.firstOrNull { it.song.songId == songId }
+                    if (item != null) {
+                        navController.navigate(
+                            Routes.recommendationDetail(
+                                songId = item.song.songId,
+                                title = item.song.title,
+                                artist = item.song.artist,
+                                score = item.score.toInt(),
+                                keyShift = item.keyShiftSemitones,
+                                explanation = item.explanation.firstOrNull(),
+                                // 已知差距（P3）：RecommendationResult 未携带 resultId（data-model §2.12），
+                                // 反馈暂以 null 关联；M11 前补字段后接通
+                                resultId = null,
+                            ),
+                        )
+                    }
+                },
                 onRetry = {
                     matchsong.core.audio.android.RecordingSessionRunner.instance?.cleanupSessionFiles()
                     flowSession.reset()
@@ -209,15 +229,70 @@ fun AppNavHost(
             arguments =
                 listOf(
                     androidx.navigation.navArgument(NavArgs.SONG_ID) { type = androidx.navigation.NavType.StringType },
+                    androidx.navigation.navArgument(NavArgs.SONG_TITLE) {
+                        type = androidx.navigation.NavType.StringType
+                        defaultValue = ""
+                    },
+                    androidx.navigation.navArgument(NavArgs.SONG_ARTIST) {
+                        type = androidx.navigation.NavType.StringType
+                        defaultValue = ""
+                    },
+                    androidx.navigation.navArgument(NavArgs.SCORE) {
+                        // 导航参数仅 StringType 支持 nullable（IntType 会抛 IllegalArgumentException）
+                        type = androidx.navigation.NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                    androidx.navigation.navArgument(NavArgs.KEY_SHIFT) {
+                        type = androidx.navigation.NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                    androidx.navigation.navArgument(NavArgs.EXPLANATION) {
+                        type = androidx.navigation.NavType.StringType
+                        defaultValue = ""
+                    },
+                    androidx.navigation.navArgument(NavArgs.RESULT_ID) {
+                        type = androidx.navigation.NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
                 ),
         ) { entry ->
-            val songId = entry.arguments?.getString(NavArgs.SONG_ID).orEmpty()
-            RecommendationDetailScreen(songId = songId, onBack = { navController.popBackStack() })
+            val args = entry.arguments
+            RecommendationDetailScreen(
+                songId = args?.getString(NavArgs.SONG_ID).orEmpty(),
+                title = args?.getString(NavArgs.SONG_TITLE).orEmpty(),
+                artist = args?.getString(NavArgs.SONG_ARTIST).orEmpty(),
+                score = args?.getString(NavArgs.SCORE)?.toIntOrNull()?.toDouble(),
+                keyShiftSemitones = args?.getString(NavArgs.KEY_SHIFT)?.toIntOrNull(),
+                explanation = args?.getString(NavArgs.EXPLANATION),
+                resultId = args?.getString(NavArgs.RESULT_ID),
+                onBack = { navController.popBackStack() },
+            )
         }
         composable(Routes.FAVORITES) {
+            val favoritesVm: matchsong.app.feature.favorites.FavoritesViewModel = hiltViewModel()
+            val favoritesVmState by favoritesVm.uiState.collectAsState()
             FavoritesScreen(
                 onBack = { navController.popBackStack() },
-                onSongClick = { songId -> navController.navigate(Routes.recommendationDetail(songId)) },
+                onSongClick = { songId ->
+                    // 收藏入口无推荐上下文：仅传歌曲名/歌手（score/shift/resultId 为 null）
+                    val success =
+                        favoritesVmState as? matchsong.app.feature.favorites.FavoritesViewModel.UiState.Content
+                    val song = success?.songs?.firstOrNull { it.songId == songId }
+                    navController.navigate(
+                        Routes.recommendationDetail(
+                            songId = songId,
+                            title = song?.title.orEmpty(),
+                            artist = song?.artist.orEmpty(),
+                            score = null,
+                            keyShift = null,
+                            explanation = null,
+                            resultId = null,
+                        ),
+                    )
+                },
             )
         }
         composable(Routes.HISTORY) {

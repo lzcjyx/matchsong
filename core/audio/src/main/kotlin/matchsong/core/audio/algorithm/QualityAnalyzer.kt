@@ -33,6 +33,7 @@ class QualityAnalyzer(
         var active = 0
         var sumRms = 0.0
         var peak = 0.0
+        var zcrSum = 0.0
         val allRmsValues = ArrayList<Double>(total)
 
         for (f in frames) {
@@ -47,6 +48,7 @@ class QualityAnalyzer(
             if (!isSilent && !isClipped) active++
             sumRms += rms
             if (f.stats.peak > peak) peak = f.stats.peak
+            zcrSum += f.stats.zeroCrossingRate
             allRmsValues.add(rms)
         }
 
@@ -57,8 +59,9 @@ class QualityAnalyzer(
         val averageRms = sumRms / total
         val activeDurationMs = active * frameDurationMs(frames)
         val noiseEstimate = estimateNoise(allRmsValues)
-        // 平均过零率：白噪声 ≈ 0.5；正弦/浊音远低于 0.1（[推测] 阈值 0.3，M4.6-2 标定）
-        val averageZcr = frames.map { it.stats.zeroCrossingRate }.average()
+        // 平均过零率：白噪声 ≈ 0.5；正弦/浊音远低于 0.1（[推测] 阈值 0.3，M4.6-2 标定）；
+        // M10.2：随主循环累加，避免 frames.map{}.average() 二次分配
+        val averageZcr = zcrSum / total
 
         // 门禁判定（顺序即优先级）
         val warnings =

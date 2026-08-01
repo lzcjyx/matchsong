@@ -1982,6 +1982,8 @@ PRIVACY.md
 
 ### M10.1 性能基准
 
+**状态：** `DONE`（2026-08-01，docs/experiments/m10-baselines.md：30s 分析 2795ms ≤10s / PSS 136MB ≤200MB / 冷启动 ~2.0s ≤3s / release APK 1.58MB；模拟器实测，真机待 M11 前置）
+
 测量：
 
 - 冷启动；
@@ -2000,6 +2002,8 @@ PRIVACY.md
 
 ### M10.2 音频性能优化
 
+**状态：** `DONE`（2026-08-01，VolumeMeter 复用 / PCM 批量写盘 / ZCR 主循环累加；分析 2866→2795ms；NDK 门禁不触发——2.8s ≪ 10s 预算，PLAN §2.2 不引入）
+
 按顺序优化：
 
 1. 减少对象分配；
@@ -2016,6 +2020,8 @@ PRIVACY.md
 
 ### M10.3 设备矩阵测试
 
+**状态：** `DONE`（模拟器行）`/ 真机阻塞`（2026-08-01，spike_avd 实测更新 device-matrix.md v0.1.1；真机 5 类设备不可用，BUG-004 DEFERRED，M11 发布前必须补测）
+
 至少覆盖：
 
 - 一个低端或较旧设备；
@@ -2031,6 +2037,8 @@ PRIVACY.md
 ---
 
 ### M10.4 稳定性测试
+
+**状态：** `DONE`（可自动化子集，2026-08-01，StabilityTest：快速导航 10 轮 + 屏幕旋转；回归捕获并修复 BUG-003 启动崩溃；录音链路项列真机手工清单）
 
 测试：
 
@@ -2050,6 +2058,8 @@ PRIVACY.md
 
 ### M10.5 完整回归
 
+**状态：** `DONE`（2026-08-01，checkQuality / testDebugUnitTest / jacocoCoverageVerification / assembleDebug+Release / connectedDebugAndroidTest 21/21 全绿）
+
 运行：
 
 - Unit Tests；
@@ -2066,6 +2076,8 @@ PRIVACY.md
 ---
 
 ### M10.6 Bug 清零
+
+**状态：** `DONE`（2026-08-01，docs/bugs/bug-log.md：P0×1 修复 / P1×1 修复 / P2×6 记录 / P3×4 Backlog；无遗留 P0/P1）
 
 发布阻塞级别：
 
@@ -2086,12 +2098,14 @@ docs/bugs/bug-log.md
 
 ## 16.3 M10 退出条件
 
-- 达到 SPEC 性能指标；
-- 目标设备矩阵通过；
-- 无 P0/P1 Bug；
-- Release 构建稳定；
-- 完整回归通过；
-- 已记录所有剩余 P2/P3 问题。
+- 达到 SPEC 性能指标；（✅ 模拟器实测达标；真机指标 M11 前置补测，BUG-004）
+- 目标设备矩阵通过；（⚠️ 模拟器行通过，真机矩阵硬件阻塞 DEFERRED）
+- 无 P0/P1 Bug；（✅ BUG-003/BUG-001 已修复，无遗留）
+- Release 构建稳定；（✅ assembleRelease 成功）
+- 完整回归通过；（✅ 全部门禁 + 仪器 21/21）
+- 已记录所有剩余 P2/P3 问题。（✅ bug-log 10 条）
+
+**M10 验收记录：** `docs/milestones/M10-acceptance.md`（2026-08-01，附条件通过）
 
 ---
 
