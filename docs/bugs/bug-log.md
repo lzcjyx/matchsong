@@ -66,6 +66,9 @@ App 版本:        versionName (versionCode)
 | BUG-010 | 带伴奏人声子谐波锁定（YIN 已知限制） | P3 | 全部 | 0.1.0 | DEFERRED | — | M5 已记录，M11 后评估 |
 | BUG-011 | 模拟器 AVD 代理（API 26/31/34）未创建 | P2 | 模拟器 | 0.1.0 | DEFERRED | — | 兼容性验证缺口（device-matrix.md） |
 | BUG-012 | 真实录音→分析→推荐异步链路无自动化仪器覆盖 | P2 | 全部 | 0.1.0 | DEFERRED | — | Compose 测试时钟限制；真机 E2E（M11） |
+| BUG-013 | 录音倒计时不跳动（固定显示"倒计时 3…"，3 秒后直接进录音） | P2 | 真机 | 0.1.0 | FIXED | 真机修复 | UI 硬编码文案；RecordingPort 增加 countdownSeconds 流（3→2→1） |
+| BUG-014 | 录音完成→质量页白屏卡死（"完成"消失后无下一步） | P1 | 真机 | 0.1.0 | FIXED | 真机修复 | stop() 先发 COMPLETED 后 finalizeWav——UI 竞态读到 null WAV；重排落盘顺序 + 防御性错误态 |
+| BUG-015 | 录音混入非歌唱说话声，干扰音域分析 | P2 | 真机 | 0.1.0 | FIXED | 真机修复 | 时间间隔分段（150ms）+ 稳定片段比例门禁（<0.3 判语音为主，按数据不足处理） |
 
 ## 5. Bug 明细
 
@@ -96,6 +99,34 @@ App 版本:        versionName (versionCode)
 ### BUG-004 ~ BUG-012（P2/P3，评估并记录后进入 Backlog）
 
 均为资源/后续里程碑项，明细见 §4 表格备注；评估结论：不阻塞 M10 退出条件（无 P0/P1 遗留）。
+
+### BUG-013 录音倒计时不跳动
+
+- **严重级别：** P2（功能缺陷，不影响数据）
+- **状态：** FIXED（真机反馈修复，2026-08-01）
+- **复现：** 真机点击开始录音 → 显示"倒计时 3…"持续 3 秒（不显示 2/1）→ 突然进入录音
+- **根因：** `RecordingScreen` 硬编码 `Text("倒计时 3…")`；状态机内部跟踪 `countdownRemaining` 但未通过 `RecordingPort` 暴露，UI 无法渲染真实秒数
+- **修复：** `RecordingPort` 增加 `countdownSeconds: StateFlow<Int>`；`RecordingSessionRunner` 每秒发射剩余秒数（3→2→1）；ViewModel 转发；UI 渲染 `倒计时 $n…`
+- **测试：** 状态机 countdownRemaining 既有测试 + 编译/仪器测试 21/21
+
+### BUG-014 录音完成→质量页白屏
+
+- **严重级别：** P1（主流程中断）
+- **状态：** FIXED（2026-08-01）
+- **复现：** 真机停止录音 → 显示"完成" → 文字消失 → 白屏无下一步
+- **根因：** `RecordingSessionRunner.stop()` 先发射 `COMPLETED` 再执行 `closePcmSink()+finalizeWav()`；UI 观察 COMPLETED 后立即读取 `runner.lastWavFile`（可能为 null）→ `flowSession.wavFile=null` → 质量页 `UiState.Idle` 渲染空白（真机线程调度放大竞态窗口，模拟器偶发/未现）
+- **修复：** ① stop() 重排：先落盘（PCM 关闭+WAV 封装）再发射 COMPLETED；② 防御层：质量页 wavFile 为 null 时显示"录音文件不可用，请重新录制"错误态而非白屏
+- **测试：** 既有仪器测试 21/21（回归路径 homeToPrepareAndBackToHome 覆盖导航）；竞态本身无法在模拟器确定性复现，已按代码路径修复 + release 冒烟
+
+### BUG-015 录音混入非歌唱说话声
+
+- **严重级别：** P2（结果质量）
+- **状态：** FIXED（2026-08-01）
+- **复现：** 真机录音时混入说话声（他人说话/自言自语），分析结果被干扰
+- **根因：** 后处理按音高跳变分段——同音高的说话词与歌唱音合并成长片段逃过 300ms 最短片段过滤；连续说话（语调滑动）稳定帧占比低但未被拒绝
+- **修复：** ① `PitchPostProcessor` 分段同时按时间间隔（>150ms）断裂（说话词与歌唱音微停顿分隔，短段被 300ms 规则丢弃）；② `AnalyzeRecordingUseCase` 语音门禁：稳定片段比例 < 0.3（AnalysisConfig.MIN_STABLE_FRAME_RATIO，[推测]）→ 判定非歌唱语音为主，按"有效演唱片段不足"处理（音域/舒适区置空 + LOW 置信度，ACC-9 不生成正式推荐）
+- **测试：** PitchPostProcessorTest 新增同音高说话词+间隔分段用例；AnalyzeRecordingUseCaseTest 新增 300→600Hz 连续滑动（说话式语调）→ 无音域 + LOW + INSUFFICIENT_SAMPLES；MIR-1K 真实人声一致性测试全部通过（门禁不误伤真实演唱）
+- **已知边界[推测]：** 连续平稳说话（无滑动、单音调）仍可能通过门禁——语音/歌唱判别为研究级问题，MVP 采用保守启发式，不宣称准确率（PLAN §2.1）
 
 ---
 

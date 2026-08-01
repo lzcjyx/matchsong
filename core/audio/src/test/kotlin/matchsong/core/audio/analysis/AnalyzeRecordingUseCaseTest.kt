@@ -3,6 +3,7 @@ package matchsong.core.audio.analysis
 import kotlinx.coroutines.runBlocking
 import matchsong.core.audio.algorithm.WavFileWriter
 import matchsong.core.audio.api.WavFileSource
+import matchsong.domain.analysis.AnalysisWarning
 import matchsong.domain.analysis.ConfidenceLevel
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -87,6 +88,29 @@ class AnalyzeRecordingUseCaseTest {
         assertTrue(
             result.confidenceLevel == ConfidenceLevel.HIGH || result.confidenceLevel == ConfidenceLevel.MEDIUM,
             "干净信号置信度应 HIGH 或 MEDIUM，实际 ${result.confidenceLevel}",
+        )
+    }
+
+    @Test
+    fun `speech-dominant glide produces no range and LOW confidence`() {
+        // BUG-015：连续说话式音高滑动（语调连续变化）→ 稳定片段比例过低 →
+        // 判定非歌唱语音为主，拒绝生成正式音域/舒适区（按数据不足，FR-ANAL-8）
+        val glide =
+            wavSource(
+                "glide",
+                { t ->
+                    // 相位积分：瞬时频率 300→600Hz 线性滑动（15s），模拟说话语调
+                    0.5 * sin(2 * PI * (300.0 * t + 10.0 * t * t))
+                },
+                15.0,
+            )
+        val result = runBlocking { useCase(glide) }
+        assertNull(result.vocalRange, "说话式滑动不应生成音域")
+        assertNull(result.comfortRange, "说话式滑动不应生成舒适区")
+        assertEquals(ConfidenceLevel.LOW, result.confidenceLevel)
+        assertTrue(
+            result.warnings.contains(AnalysisWarning.INSUFFICIENT_SAMPLES),
+            "应提示有效演唱片段不足，实际 ${result.warnings}",
         )
     }
 }

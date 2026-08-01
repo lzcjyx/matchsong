@@ -152,6 +152,7 @@ fun RecordingScreen(
 ) {
     val recordingState by viewModel.recordingState.collectAsState()
     val volume by viewModel.volume.collectAsState()
+    val countdownSeconds by viewModel.countdownSeconds.collectAsState()
     val context = LocalContext.current
 
     // 录音完成后跳转（Completed → 质量结果页）
@@ -172,7 +173,12 @@ fun RecordingScreen(
             RecordingState.PREPARING,
             -> Text("准备录音…", style = MaterialTheme.typography.headlineMedium)
 
-            RecordingState.COUNTDOWN -> Text("倒计时 3…", style = MaterialTheme.typography.headlineLarge)
+            // BUG-013：倒计时渲染真实剩余秒数（3→2→1），而非固定文案
+            RecordingState.COUNTDOWN ->
+                Text(
+                    text = "倒计时 ${countdownSeconds.coerceAtLeast(1)}…",
+                    style = MaterialTheme.typography.headlineLarge,
+                )
 
             RecordingState.RECORDING -> {
                 Text("录音中…", style = MaterialTheme.typography.headlineMedium)

@@ -30,4 +30,7 @@ class AndroidRecordingPort(
     override val stateFlow: StateFlow<RecordingState> get() = runner.stateFlow
 
     override val volumeFlow: SharedFlow<VolumeLevel> get() = runner.volumeFlow
+
+    /** BUG-013：倒计时剩余秒数转发（3→2→1）。 */
+    override val countdownSeconds: StateFlow<Int> get() = runner.countdownSeconds
 }

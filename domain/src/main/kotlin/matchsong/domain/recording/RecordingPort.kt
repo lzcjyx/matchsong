@@ -20,6 +20,9 @@ interface RecordingPort {
 
     /** 实时音量级（≤10Hz 节流，FR-REC-4）。 */
     val volumeFlow: SharedFlow<VolumeLevel>
+
+    /** 倒计时剩余秒数（3→2→1，进入 RECORDING 后为 0；BUG-013 修复）。 */
+    val countdownSeconds: StateFlow<Int>
 }
 
 /**

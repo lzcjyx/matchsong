@@ -103,6 +103,17 @@ fun AppNavHost(
             val qualityVm: QualityResultViewModel = hiltViewModel()
             val qualityState by qualityVm.state.collectAsState()
             val wavFile by flowSession.wavFile.collectAsState()
+            // BUG-014 防御层：WAV 缺失（finalize 失败/竞态兜底）→ 显式错误而非白屏
+            if (wavFile == null) {
+                matchsong.app.design.components.state.ErrorState(
+                    message = "录音文件不可用，请重新录制",
+                    onRetry = {
+                        flowSession.reset()
+                        navController.navigate(Routes.PREPARE) { popUpTo(Routes.RECORDING) }
+                    },
+                )
+                return@composable
+            }
             LaunchedEffect(wavFile) {
                 if (wavFile != null) qualityVm.analyze(wavFile)
             }

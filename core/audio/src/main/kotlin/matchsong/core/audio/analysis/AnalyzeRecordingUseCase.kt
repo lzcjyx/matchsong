@@ -7,6 +7,7 @@ import matchsong.core.audio.algorithm.QualityAnalyzer
 import matchsong.core.audio.algorithm.YinPitchDetector
 import matchsong.core.audio.api.AudioFrameSource
 import matchsong.core.audio.api.PitchTracker
+import matchsong.domain.analysis.AnalysisConfig
 import matchsong.domain.analysis.AnalysisWarning
 import matchsong.domain.analysis.ComfortRangeEstimator
 import matchsong.domain.analysis.ConfidenceLevel
@@ -96,10 +97,16 @@ class AnalyzeRecordingUseCase(
         val comfortRange = ComfortRangeEstimator.estimate(voicedMidis, stableRange)
         val stability = PitchStabilityMetrics.compute(analysisTrack)
 
+        // BUG-015 语音干扰门禁：稳定片段比例过低 → 判定录音以非歌唱语音为主
+        // （说话语调连续滑动，稳定帧占比远低于演唱），按「有效演唱片段不足」处理：
+        // 音域/舒适区置空 + LOW 置信度（ACC-9 不生成正式推荐），提示用户重录。
+        val speechDominant = stability.stableFrameRatio < AnalysisConfig.MIN_STABLE_FRAME_RATIO
+
         // 5. 置信度分档（SPEC §13）
         val rangeConfidence = vocalRange.confidence
         val confidenceLevel =
             when {
+                speechDominant -> ConfidenceLevel.LOW
                 rangeConfidence >= 0.7 -> ConfidenceLevel.HIGH
                 rangeConfidence >= 0.5 -> ConfidenceLevel.MEDIUM
                 else -> ConfidenceLevel.LOW
@@ -108,6 +115,7 @@ class AnalyzeRecordingUseCase(
         // 6. 警告
         val warnings =
             buildList {
+                if (speechDominant) add(AnalysisWarning.INSUFFICIENT_SAMPLES)
                 if (!vocalRange.sampleSufficiency) add(AnalysisWarning.INSUFFICIENT_SAMPLES)
                 if (vocalRange.warning == AnalysisWarning.LOW_CONFIDENCE) add(AnalysisWarning.LOW_CONFIDENCE)
             }
@@ -115,8 +123,8 @@ class AnalyzeRecordingUseCase(
         return VoiceAnalysisResult(
             qualityUsable = true,
             qualityWarnings = emptyList(),
-            vocalRange = if (vocalRange.sampleSufficiency) vocalRange else null,
-            comfortRange = comfortRange,
+            vocalRange = if (vocalRange.sampleSufficiency && !speechDominant) vocalRange else null,
+            comfortRange = if (speechDominant) null else comfortRange,
             stability = stability,
             voicedFrameCount = analysisTrack.voicedFrameCount,
             totalFrameCount = frames.size,

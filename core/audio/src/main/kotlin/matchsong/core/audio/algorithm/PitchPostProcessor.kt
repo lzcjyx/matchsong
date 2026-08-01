@@ -115,7 +115,9 @@ class PitchPostProcessor(
         }
     }
 
-    /** 最短稳定片段：连续片段时长 < 阈值 → 丢弃。 */
+    /** 最短稳定片段：连续片段（音高跳变或时间间隔断裂）时长 < 阈值 → 丢弃。
+     *  BUG-015：分段同时按时间间隔断裂（> maxSegmentGapMs）——说话词/短促语音
+     *  与歌唱音以微停顿分隔，避免与相邻歌唱音合并后逃过时长过滤。 */
     private fun filterShortSegments(frames: List<PitchFrame>): List<PitchFrame> {
         if (frames.isEmpty()) return frames
         val out = ArrayList<PitchFrame>(frames.size)
@@ -123,7 +125,8 @@ class PitchPostProcessor(
         for (i in 1..frames.size) {
             val segEnd =
                 i == frames.size ||
-                    abs(PitchNotation.freqDiffCents(frames[i].f0Hz, frames[i - 1].f0Hz)) > config.maxJumpCents
+                    abs(PitchNotation.freqDiffCents(frames[i].f0Hz, frames[i - 1].f0Hz)) > config.maxJumpCents ||
+                    frames[i].timestampMs - frames[i - 1].timestampMs > config.maxSegmentGapMs
             if (segEnd) {
                 val segDuration = frames[i - 1].timestampMs - frames[segStart].timestampMs
                 if (segDuration >= config.minSegmentDurationMs) {
@@ -148,4 +151,6 @@ data class PitchPostConfig(
     val maxJumpCents: Double = 60.0,
     /** 最短稳定片段时长（毫秒，[推测] 300ms）。 */
     val minSegmentDurationMs: Long = 300,
+    /** 分段时间间隔断裂阈值（毫秒，[推测] 150ms，BUG-015 语音干扰过滤）。 */
+    val maxSegmentGapMs: Long = 150,
 )

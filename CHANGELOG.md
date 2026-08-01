@@ -51,6 +51,12 @@
   - 发布决策文档（M11.5）：docs/release/release-readiness.md（NOT_READY，阻塞项 4 条）/ known-issues.md（KI-1..11）/ rollback-plan.md（Play 轨道回滚 + Room 降级策略）。
   - 验收：docs/milestones/M11-acceptance.md（附条件通过——真机矩阵与发布决定为产品/硬件责任）。
 
+- **真机反馈修复（2026-08-01，BUG-013/014/015）**
+  - 倒计时修复：RecordingPort 新增 countdownSeconds 流，UI 渲染真实 3→2→1（原硬编码"倒计时 3…"）。
+  - 白屏修复：stop() 先落盘再宣布 COMPLETED（消除 lastWavFile 竞态）+ 质量页 wavFile 缺失防御性错误态。
+  - 语音干扰过滤：后处理时间间隔分段（150ms）+ 稳定片段比例门禁（<0.3 判语音为主，按数据不足处理，ACC-9）；合成测试 + MIR-1K 真实人声回归通过。
+  - release APK 重建（1.34MB）并冒烟通过。
+
 ### 安全（Security）
 
 - 新增 `PRIVACY.md` 初稿：明确 MVP 无网络权限、无后端、无 API Key；不上传原始音频与声音特征；录音分析完成后删除（FR-PRIV-1/3）；删除流程全链路可测（FR-PRIV-5）。M9.1 数据清单落地后定稿。

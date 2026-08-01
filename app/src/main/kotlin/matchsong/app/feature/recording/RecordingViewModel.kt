@@ -39,12 +39,19 @@ class RecordingViewModel
         private val _volume = MutableStateFlow<VolumeLevel?>(null)
         val volume: StateFlow<VolumeLevel?> = _volume.asStateFlow()
 
+        /** BUG-013：倒计时剩余秒数（3→2→1）。 */
+        private val _countdownSeconds = MutableStateFlow(0)
+        val countdownSeconds: StateFlow<Int> = _countdownSeconds.asStateFlow()
+
         init {
             viewModelScope.launch {
                 recordingPort.stateFlow.collect { _recordingState.value = it }
             }
             viewModelScope.launch {
                 recordingPort.volumeFlow.collect { _volume.value = it }
+            }
+            viewModelScope.launch {
+                recordingPort.countdownSeconds.collect { _countdownSeconds.value = it }
             }
         }
 

@@ -51,6 +51,10 @@ class RecordingSessionRunner(
     private val _volumeFlow = MutableSharedFlow<VolumeLevel>(extraBufferCapacity = 1)
     override val volumeFlow: SharedFlow<VolumeLevel> = _volumeFlow.asSharedFlow()
 
+    /** BUG-013：倒计时剩余秒数（3→2→1；进入 RECORDING 后为 0）。 */
+    private val _countdownSeconds = MutableStateFlow(0)
+    override val countdownSeconds: StateFlow<Int> = _countdownSeconds.asStateFlow()
+
     internal val stateMachine = RecordingStateMachine()
 
     private var focusManager: AudioFocusManager? = null
@@ -94,13 +98,15 @@ class RecordingSessionRunner(
 
         sessionJob =
             scope.launch {
-                // 倒计时 3s（FR-REC-2）
+                // 倒计时 3s（FR-REC-2）；BUG-013：每秒发射剩余秒数供 UI 渲染 3→2→1
                 stateMachine.onEvent(RecordingEvent.Prepared)
                 _stateFlow.value = RecordingState.COUNTDOWN
+                _countdownSeconds.value = stateMachine.countdownRemaining
                 repeat(3) {
                     delay(1000)
                     stateMachine.onEvent(RecordingEvent.Tick)
                     _stateFlow.value = stateMachine.state
+                    _countdownSeconds.value = stateMachine.countdownRemaining
                 }
                 // 开始采集
                 stateMachine.onEvent(RecordingEvent.RecordingStarted)
@@ -212,10 +218,13 @@ class RecordingSessionRunner(
         _stateFlow.value = RecordingState.STOPPING
         recorder.stop()
         sessionJob?.cancel()
+        // BUG-014 修复：先落盘（PCM 关闭 + WAV 封装）再宣布 COMPLETED——
+        // 原顺序在 COMPLETED 发射后才 finalizeWav，UI 可能在 lastWavFile 就绪前
+        // 读取到 null 并跳转 → 质量页白屏（真机复现）
+        closePcmSink()
+        finalizeWav()
         stateMachine.onEvent(RecordingEvent.Stopped)
         _stateFlow.value = RecordingState.COMPLETED
-        closePcmSink()
-        finalizeWav() // M8.1-1：完成 → WAV 供质量/分析
         focusManager?.abandonFocus()
     }
 
