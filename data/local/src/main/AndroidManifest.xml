@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- BUG-018 歌曲包下载（联网曲库扩展）：仅下载公开歌曲数据 JSON（HTTPS），
+         不上传任何音频/声音特征/个人信息（FR-PRIV-3 保持：无上传路径）。 -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+</manifest>

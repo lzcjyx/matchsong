@@ -14,10 +14,14 @@ import matchsong.data.local.db.dao.AnalysisHistoryDao
 import matchsong.data.local.db.dao.FavoriteDao
 import matchsong.data.local.db.dao.FeedbackDao
 import matchsong.data.local.db.dao.SongDao
+import matchsong.data.local.network.HttpSongPackFetcher
+import matchsong.data.local.network.SongPackFetcher
+import matchsong.data.local.network.SongPackImporter
 import matchsong.data.local.repository.RoomAnalysisHistoryRepository
 import matchsong.data.local.repository.RoomFavoritesRepository
 import matchsong.data.local.repository.RoomFeedbackRepository
 import matchsong.data.local.repository.RoomSongRepository
+import matchsong.data.local.repository.SongImportRepository
 import matchsong.data.local.settings.DataStoreSettingsRepository
 import matchsong.domain.port.AnalysisHistoryRepository
 import matchsong.domain.port.FavoritesRepository
@@ -80,4 +84,16 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideSettingsRepository(repo: DataStoreSettingsRepository): SettingsRepository = repo
+
+    /** BUG-018 歌曲包下载器/导入器绑定（联网曲库扩展，仅下载无上传）。 */
+    @Provides
+    @Singleton
+    fun provideHttpSongPackFetcher(): SongPackFetcher = HttpSongPackFetcher()
+
+    @Provides
+    @Singleton
+    fun provideSongPackImporter(
+        fetcher: SongPackFetcher,
+        importRepository: SongImportRepository,
+    ): SongPackImporter = SongPackImporter(fetcher, importRepository)
 }

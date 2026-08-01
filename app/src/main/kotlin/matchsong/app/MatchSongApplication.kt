@@ -31,6 +31,10 @@ class MatchSongApplication : Application() {
     @Inject
     lateinit var songImportRepository: SongImportRepository
 
+    /** BUG-018：曲库计数（启动导入仅空库执行——用户已导入歌曲包时不覆盖）。 */
+    @Inject
+    lateinit var songDao: matchsong.data.local.db.dao.SongDao
+
     /** assets 读取（内置曲库）。 */
     @Inject
     @ApplicationContext
@@ -55,6 +59,12 @@ class MatchSongApplication : Application() {
     private fun ensureSongCatalog() {
         appScope.launch {
             try {
+                // BUG-018：仅空库时导入内置曲库——用户下载过歌曲包（版本差异）后尊重用户曲库，
+                // 避免启动时被内置包覆盖
+                if (songDao.count() > 0) {
+                    logger.d(TAG, "曲库非空，跳过内置导入")
+                    return@launch
+                }
                 val json =
                     appContext.assets
                         .open("songs/mvp-songs.json")

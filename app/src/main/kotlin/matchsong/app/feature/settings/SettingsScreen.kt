@@ -12,6 +12,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -38,8 +39,10 @@ private enum class DeleteTarget(
 }
 
 /**
- * M9.3 设置页（FR-HX-4：单条历史删除在历史页；本页提供全部历史/收藏/设置/缓存/重置）。
+ * M9.3 设置页（FR-HX-4：单条历史删除在历史页；本页提供全部历史/收藏/设置/缓存/重置；
+ * BUG-018 歌曲包区块）。
  */
+@Suppress("LongMethod") // 设置页为声明式区块清单（数据管理 + 歌曲包 + 状态反馈），拆散破坏可读性
 @Composable
 fun SettingsScreen(
     onDeleteAll: () -> Unit,
@@ -68,18 +71,30 @@ fun SettingsScreen(
         ActionRow("删除全部数据") { onDeleteAll() }
 
         Spacer(modifier = Modifier.height(16.dp))
+        SongPackSection(viewModel)
+
+        Spacer(modifier = Modifier.height(16.dp))
         when (val s = state) {
             is SettingsViewModel.UiState.Busy ->
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    CircularProgressIndicator()
-                    Text(text = "删除中…", style = MaterialTheme.typography.bodyMedium)
+                if (s.action == SettingsViewModel.Action.IMPORT_PACK) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator()
+                        Text(text = "正在下载歌曲包…", style = MaterialTheme.typography.bodyMedium)
+                    }
+                } else {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator()
+                        Text(text = "删除中…", style = MaterialTheme.typography.bodyMedium)
+                    }
                 }
             is SettingsViewModel.UiState.Done ->
-                Text(
-                    text = "已删除",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
+                if (s.action != SettingsViewModel.Action.IMPORT_PACK) {
+                    Text(
+                        text = "已删除",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
             is SettingsViewModel.UiState.Error ->
                 Text(
                     text = s.message,
@@ -128,6 +143,42 @@ private fun ActionRow(
         Text(text = label)
     }
 }
+
+/** BUG-018：歌曲包区块（联网曲库；下载替换当前曲库）。 */
+@Composable
+private fun SongPackSection(viewModel: SettingsViewModel) {
+    Text(text = "歌曲包（联网曲库）", style = MaterialTheme.typography.titleMedium)
+    val songCount by viewModel.songCount.collectAsState()
+    Text(
+        text = "当前曲库 $songCount 首；下载歌曲包将替换当前曲库（专攻方向）。",
+        style = MaterialTheme.typography.bodySmall,
+    )
+    var packUrl by remember { mutableStateOf(DEFAULT_PACK_URL) }
+    OutlinedTextField(
+        value = packUrl,
+        onValueChange = { packUrl = it },
+        label = { Text("歌曲包 URL（HTTPS JSON）") },
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+    )
+    OutlinedButton(
+        onClick = { viewModel.importSongPack(packUrl) },
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+    ) {
+        Text("下载并导入歌曲包")
+    }
+    val importMessage by viewModel.importMessage.collectAsState()
+    if (importMessage != null) {
+        Text(
+            text = importMessage.orEmpty(),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.primary,
+        )
+    }
+}
+
+/** BUG-018：默认歌曲包（公开仓库 raw；可自行替换为任意 HTTPS JSON）。 */
+private const val DEFAULT_PACK_URL =
+    "https://raw.githubusercontent.com/lzcjyx/matchsong/main/song-packs/zhou-jaylen-pack.json"
 
 /**
  * M9.3 重置应用确认页（ACC-15）：确认后执行删除全部数据，

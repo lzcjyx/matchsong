@@ -65,6 +65,8 @@ dependencies {
     testImplementation(libs.turbine)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.room.testing)
+    // BUG-018 歌曲包下载器测试（MockWebServer，仅网络模块使用）
+    testImplementation(libs.mockwebserver)
     androidTestImplementation(libs.androidx.test.ext.junit)
     // M9.4 修复：AndroidJUnitRunner 为独立 artifact（ext.junit 不再传递引入），
     // 库模块 connected 测试需要显式声明，否则 runner 类缺失启动崩溃

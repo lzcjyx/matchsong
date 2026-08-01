@@ -32,6 +32,7 @@ androidxTestCore = "1.6.1"
 androidxTestExtJunit = "1.2.1"
 androidxTestRules = "1.6.1"
 androidxTestRunner = "1.6.2"
+mockwebserver = "4.12.0"
 espresso = "3.6.1"
 composeUiTest = "1.7.6"
 androidxJunit = "1.2.1"
@@ -97,6 +98,7 @@ androidx-test-rules = { group = "androidx.test", name = "rules", version.ref = "
 androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "androidxTestRunner" }
 androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxTestExtJunit" }
 androidx-test-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
+mockwebserver = { group = "com.squareup.okhttp3", name = "mockwebserver", version.ref = "mockwebserver" }
 compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }

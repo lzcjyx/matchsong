@@ -252,12 +252,12 @@ class RecordingSessionRunner(
     }
 
     fun release() {
-        scope.cancel()
+        // BUG-017 修复：仅做幂等资源收尾。
+        // ① 不得置空 instance / 取消 scope——服务销毁（stopSelf → onDestroy）后 UI 流程
+        //    仍需读取 lastWavFile（AppNavHost onFinished），且单例需支持再次录音；
+        // ② 不得删除会话文件——文件删除仅由分析流程钩子（ANALYZING Done / 重录）与
+        //    启动残留清理负责（M9.2 误加导致录音刚完成文件即被删 → “录音文件不可用”）。
         recorder.stop()
-        closePcmSink()
         focusManager?.abandonFocus()
-        // M9.2：服务销毁时清理本会话残留（分析未消费的 .pcm/.wav），防敏感数据残留
-        cleanupSessionFiles()
-        instance = null
     }
 }

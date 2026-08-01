@@ -11,10 +11,12 @@ import kotlinx.coroutines.launch
 import matchsong.app.feature.common.ErrorRecoveryHandler
 import matchsong.core.common.error.AppError
 import matchsong.core.common.result.OperationResult
+import matchsong.data.local.network.SongPackImporter
 import matchsong.domain.port.AnalysisHistoryRepository
 import matchsong.domain.port.FavoritesRepository
 import matchsong.domain.port.RecordingFileCleaner
 import matchsong.domain.port.SettingsRepository
+import matchsong.domain.port.SongRepository
 import matchsong.domain.usecase.DeleteAllDataUseCase
 import javax.inject.Inject
 
@@ -35,6 +37,8 @@ class SettingsViewModel
         private val favoritesRepository: FavoritesRepository,
         private val settingsRepository: SettingsRepository,
         private val fileCleaner: RecordingFileCleaner,
+        private val songPackImporter: SongPackImporter,
+        private val songRepository: SongRepository,
     ) : ViewModel() {
         private val _state = MutableStateFlow<UiState>(UiState.Idle)
         val state: StateFlow<UiState> = _state.asStateFlow()
@@ -46,6 +50,7 @@ class SettingsViewModel
             CLEAR_SETTINGS,
             CLEAR_CACHE,
             RESET_ALL,
+            IMPORT_PACK,
         }
 
         sealed interface UiState {
@@ -63,6 +68,47 @@ class SettingsViewModel
             /** 重置完成：数据已全清，导航层跳转 Splash 恢复首次启动（ACC-15）。 */
             data object ResetCompleted : UiState
         }
+
+        /** BUG-018：当前曲库歌曲数（设置页展示；删除数据后刷新）。 */
+        private val _songCount = MutableStateFlow(0)
+        val songCount: StateFlow<Int> = _songCount.asStateFlow()
+
+        init {
+            refreshSongCount()
+        }
+
+        private fun refreshSongCount() {
+            viewModelScope.launch {
+                _songCount.value = songRepository.getAllMetadata().size
+            }
+        }
+
+        /** BUG-018：下载并导入歌曲包（替换当前曲库，版本差异事务替换）。 */
+        fun importSongPack(packUrl: String) {
+            if (packUrl.isBlank() || _state.value is UiState.Busy) return
+            viewModelScope.launch {
+                _state.value = UiState.Busy(Action.IMPORT_PACK)
+                songPackImporter.importPack(packUrl.trim()).fold(
+                    onSuccess = { outcome ->
+                        _state.value = UiState.Done(Action.IMPORT_PACK)
+                        refreshSongCount()
+                        _importMessage.value =
+                            "导入成功：${outcome.importedCount} 首" +
+                            if (outcome.replaced) "（替换原曲库）" else "（已是最新版本）"
+                    },
+                    onFailure = { e ->
+                        _state.value =
+                            UiState.Error(
+                                Action.IMPORT_PACK,
+                                "歌曲包导入失败：${e.message ?: "未知错误"}",
+                            )
+                    },
+                )
+            }
+        }
+
+        private val _importMessage = MutableStateFlow<String?>(null)
+        val importMessage: StateFlow<String?> = _importMessage.asStateFlow()
 
         fun clearHistory() =
             runAction(Action.CLEAR_HISTORY, { AppError.DatabaseError.Query(it) }) {
