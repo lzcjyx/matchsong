@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -20,18 +22,45 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // M11.1 Release 签名：keystore.properties（不入库，含密码）+ matchsong-release.keystore（不入库）。
+    // 生产密钥库由产品负责人安全保管（Backup/Rotation 见 docs/release/release-readiness.md）；
+    // 本仓库生成的是本地开发/内部测试用密钥库。缺配置时回退 debug 签名以便开发构建。
+    signingConfigs {
+        create("release") {
+            val props =
+                Properties().apply {
+                    val f = rootProject.file("keystore.properties")
+                    if (f.exists()) {
+                        f.inputStream().use { load(it) }
+                    }
+                }
+            storeFile =
+                rootProject.file(props.getProperty("KEYSTORE_FILE", "matchsong-release.keystore"))
+                    .takeIf { it.exists() }
+            storePassword = props.getProperty("STORE_PASSWORD")
+            keyAlias = props.getProperty("KEY_ALIAS")
+            keyPassword = props.getProperty("KEY_PASSWORD")
+        }
+    }
+
     buildTypes {
         debug {
             // Debug 保留完整日志与测试工具（core:testing 仅 debugImplementation 引入）
         }
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            // M11.1 正式签名；当前用 debug 签名占位以便 assembleRelease 可构建
-            signingConfig = signingConfigs.getByName("debug")
+            // M11.1 正式签名（keystore.properties 存在时）；缺配置回退 debug 签名保证可构建
+            signingConfig =
+                if (signingConfigs.getByName("release").storeFile != null) {
+                    signingConfigs.getByName("release")
+                } else {
+                    signingConfigs.getByName("debug")
+                }
         }
     }
 

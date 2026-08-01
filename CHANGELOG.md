@@ -43,6 +43,14 @@
   - Bug 清零（M10.6）：`docs/bugs/bug-log.md` 全量三分类（P0×1/P1×1 修复；P2/P3×10 记录）；**反馈 UI 接线（BUG-001）与详情页真实数据（BUG-002）修复**——详情页由 M2 占位 Fake 数据切换为真实推荐项（导航参数传递），新增反馈入口（六类反馈，仅保存不调权重）。
   - 设备矩阵（M10.3）：模拟器行实测更新；真机矩阵硬件阻塞（BUG-004 DEFERRED，M11 发布前补测）。
 
+- **M11 Beta 与 Google Play 发布**
+  - Release 配置（M11.1）：release 签名（keystore.properties + matchsong-release.keystore，均不入库；缺配置回退 debug 签名）+ R8 规则（kotlinx-serialization）+ `isShrinkResources` + Mapping 保存；AAB 3.0MB 签名验证通过。
+  - Release 冒烟（M11.3）：安装/同签名更新/首次启动（Onboarding 正常渲染，R8 无崩溃）/权限/崩溃/ANR 验证；检查表 docs/testing/internal-testing-checklist.md。
+  - 商店材料（M11.2）：应用名/描述/权限用途/数据安全/删除方式（play-store-materials.md §7-8）；合规红线：不宣传未经验证的准确率。
+  - Closed Beta 指标方案（M11.4）：docs/release/closed-beta-metrics.md（9 项指标 + 不采集原始音频红线）。
+  - 发布决策文档（M11.5）：docs/release/release-readiness.md（NOT_READY，阻塞项 4 条）/ known-issues.md（KI-1..11）/ rollback-plan.md（Play 轨道回滚 + Room 降级策略）。
+  - 验收：docs/milestones/M11-acceptance.md（附条件通过——真机矩阵与发布决定为产品/硬件责任）。
+
 ### 安全（Security）
 
 - 新增 `PRIVACY.md` 初稿：明确 MVP 无网络权限、无后端、无 API Key；不上传原始音频与声音特征；录音分析完成后删除（FR-PRIV-1/3）；删除流程全链路可测（FR-PRIV-5）。M9.1 数据清单落地后定稿。

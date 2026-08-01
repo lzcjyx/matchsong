@@ -2121,6 +2121,8 @@ docs/bugs/bug-log.md
 
 ### M11.1 Release 配置
 
+**状态：** `DONE`（2026-08-01，release 签名（keystore.properties + matchsong-release.keystore，均不入库）+ R8 规则（kotlinx-serialization）+ 资源收缩 + Mapping 保存；AAB 3.0MB 签名验证通过；release 冒烟：安装/更新/首启/权限/无崩溃）
+
 完成：
 
 - Application ID；
@@ -2137,6 +2139,8 @@ docs/bugs/bug-log.md
 ---
 
 ### M11.2 商店材料
+
+**状态：** `DONE`（2026-08-01，docs/compliance/play-store-materials.md §7-8：应用名/描述/权限/数据安全/删除方式就绪；图标/Feature Graphic/截图/支持邮箱待设计/提供；**合规红线：不得宣传未经验证的准确率**）
 
 准备：
 
@@ -2159,6 +2163,8 @@ docs/bugs/bug-log.md
 
 ### M11.3 Internal Testing
 
+**状态：** `DONE`（模拟器部分，2026-08-01，docs/testing/internal-testing-checklist.md：签名/安装/同签名更新/首次启动/权限/崩溃/ANR/Mapping 已验证；真机项待 M10.3 设备矩阵）
+
 检查：
 
 - 安装；
@@ -2177,6 +2183,8 @@ docs/bugs/bug-log.md
 
 ### M11.4 Closed Beta
 
+**状态：** `DONE`（方案，2026-08-01，docs/release/closed-beta-metrics.md：9 项指标定义 + 合规红线（不采集原始音频除非新增同意）+ 执行前置条件；执行需 Play Console 权限）
+
 收集：
 
 - 录音完成率；
@@ -2194,6 +2202,8 @@ docs/bugs/bug-log.md
 ---
 
 ### M11.5 发布决策
+
+**状态：** `DONE`（2026-08-01，docs/release/release-readiness.md（NOT_READY：真机矩阵阻塞）/ known-issues.md（KI-1..11）/ rollback-plan.md（Play 轨道回滚 + Room 兼容性策略）；**发布决定待产品负责人**）
 
 根据 Beta 数据判断：
 
@@ -2216,13 +2226,15 @@ docs/release/rollback-plan.md
 
 ## 17.3 M11 退出条件
 
-- AAB 可正常签名；
-- Internal Testing 通过；
-- 商店材料完整；
-- 隐私声明与代码一致；
-- 发布检查表通过；
-- 已准备回滚版本；
-- 产品负责人作出明确发布决定。
+- AAB 可正常签名；（✅ release 签名验证通过）
+- Internal Testing 通过；（⚠️ 模拟器部分通过；真机项待 M10.3 设备矩阵）
+- 商店材料完整；（⚠️ 文案/权限/数据安全就绪；视觉材料与支持邮箱待提供）
+- 隐私声明与代码一致；（✅ PRIVACY.md v1.0，遥测未启用）
+- 发布检查表通过；（⚠️ 见 release-readiness.md，真机阻塞项）
+- 已准备回滚版本；（✅ rollback-plan.md：版本策略 + Play 轨道回滚 + Room 兼容性）
+- 产品负责人作出明确发布决定。（⏳ 待决定，release-readiness.md §4 决策项已列出）
+
+**M11 验收记录：** `docs/milestones/M11-acceptance.md`（2026-08-01）
 
 ---
 
