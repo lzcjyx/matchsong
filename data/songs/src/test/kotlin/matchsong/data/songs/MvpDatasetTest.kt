@@ -11,7 +11,7 @@ import java.io.File
  * 每次数据集变更必须通过（防回归）；规模 50-200，语言/风格覆盖，全量校验 0 错误。
  */
 class MvpDatasetTest {
-    private val datasetFile = File("src/main/resources/songs/mvp-songs.json")
+    private val datasetFile = File("src/main/assets/songs/mvp-songs.json")
 
     private fun songs(): List<matchsong.core.model.song.SongMetadata> {
         val parsed = SongDataParser.parse(datasetFile.readText(Charsets.UTF_8))

@@ -69,6 +69,7 @@ App 版本:        versionName (versionCode)
 | BUG-013 | 录音倒计时不跳动（固定显示"倒计时 3…"，3 秒后直接进录音） | P2 | 真机 | 0.1.0 | FIXED | 真机修复 | UI 硬编码文案；RecordingPort 增加 countdownSeconds 流（3→2→1） |
 | BUG-014 | 录音完成→质量页白屏卡死（"完成"消失后无下一步） | P1 | 真机 | 0.1.0 | FIXED | 真机修复 | stop() 先发 COMPLETED 后 finalizeWav——UI 竞态读到 null WAV；重排落盘顺序 + 防御性错误态 |
 | BUG-015 | 录音混入非歌唱说话声，干扰音域分析 | P2 | 真机 | 0.1.0 | FIXED | 真机修复 | 时间间隔分段（150ms）+ 稳定片段比例门禁（<0.3 判语音为主，按数据不足处理） |
+| BUG-016 | 内置曲库从未在运行时导入——真机推荐必然空结果 | P1 | 全部 | 0.1.0 | FIXED | 真机修复 | 数据集移入 assets + Application 启动幂等导入；SongCatalogSeedTest 回归（真实 DB 50 首） |
 
 ## 5. Bug 明细
 
@@ -127,6 +128,16 @@ App 版本:        versionName (versionCode)
 - **修复：** ① `PitchPostProcessor` 分段同时按时间间隔（>150ms）断裂（说话词与歌唱音微停顿分隔，短段被 300ms 规则丢弃）；② `AnalyzeRecordingUseCase` 语音门禁：稳定片段比例 < 0.3（AnalysisConfig.MIN_STABLE_FRAME_RATIO，[推测]）→ 判定非歌唱语音为主，按"有效演唱片段不足"处理（音域/舒适区置空 + LOW 置信度，ACC-9 不生成正式推荐）
 - **测试：** PitchPostProcessorTest 新增同音高说话词+间隔分段用例；AnalyzeRecordingUseCaseTest 新增 300→600Hz 连续滑动（说话式语调）→ 无音域 + LOW + INSUFFICIENT_SAMPLES；MIR-1K 真实人声一致性测试全部通过（门禁不误伤真实演唱）
 - **已知边界[推测]：** 连续平稳说话（无滑动、单音调）仍可能通过门禁——语音/歌唱判别为研究级问题，MVP 采用保守启发式，不宣称准确率（PLAN §2.1）
+
+### BUG-016 内置曲库未在运行时导入
+
+- **严重级别：** P1（推荐主功能在真机必然空结果）
+- **状态：** FIXED（2026-08-01）
+- **复现：** 真机完成分析 → 推荐页显示空状态/无候选（Room song_metadata 表为空）
+- **根因：** 数据集 `mvp-songs.json` 位于 data:songs JVM resources，`SongImportRepository` 无任何运行时调用方（仅 CLI/测试使用）——M6 验收只验证了仓库层，未验证应用启动装载；此前白屏（BUG-014）掩盖了该问题
+- **修复：** ① 数据集移至 `data/songs/src/main/assets/songs/mvp-songs.json`（Android 资产打包，CLI/测试改路径）；② `MatchSongApplication.ensureSongCatalog()` 启动异步幂等导入（版本比对跳过/事务替换），失败仅记日志不阻塞（推荐页空态降级）
+- **测试：** `SongCatalogSeedTest`（仪器测试）：经 main 源码 @EntryPoint 查真实 DB，轮询断言 50 首落库；release 冒烟 logcat 确认"歌曲目录就绪：50 首"
+- **已知边界：** 导入为异步——极快用户可能在导入完成前进推荐页看到空态（50 行导入 <100ms，可接受）；下次启动/重试即正常
 
 ---
 

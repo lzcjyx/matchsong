@@ -1,13 +1,16 @@
 package matchsong.app
 
 import android.app.Application
+import android.content.Context
 import dagger.hilt.android.HiltAndroidApp
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import matchsong.core.common.log.Logger
+import matchsong.data.local.repository.SongImportRepository
 import matchsong.domain.recording.CleanupStaleRecordingsUseCase
 import javax.inject.Inject
 
@@ -24,12 +27,54 @@ class MatchSongApplication : Application() {
     @Inject
     lateinit var logger: Logger
 
-    /** 应用级作用域：随进程存活，仅承载启动清理等一次性后台任务。 */
+    /** BUG-016：内置曲库导入仓库（FR-SONG-4；数据源 assets/songs/mvp-songs.json）。 */
+    @Inject
+    lateinit var songImportRepository: SongImportRepository
+
+    /** assets 读取（内置曲库）。 */
+    @Inject
+    @ApplicationContext
+    lateinit var appContext: Context
+
+    /** 应用级作用域：随进程存活，仅承载启动清理/曲库装载等一次性后台任务。 */
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     override fun onCreate() {
         super.onCreate()
         launchStartupCleanup()
+        ensureSongCatalog()
+    }
+
+    /**
+     * BUG-016 修复：内置曲库启动装载（幂等，FR-SONG-4）。
+     *
+     * 读取 assets/songs/mvp-songs.json → [SongImportRepository.import]（版本比对幂等，
+     * 同版本跳过、差异事务替换）；失败仅记录日志不阻塞启动（推荐页以空态降级，可重试）。
+     * 日志只含数量与结果类型，不含歌曲内容（FR-PRIV-4）。
+     */
+    private fun ensureSongCatalog() {
+        appScope.launch {
+            try {
+                val json =
+                    appContext.assets
+                        .open("songs/mvp-songs.json")
+                        .bufferedReader(Charsets.UTF_8)
+                        .use { it.readText() }
+                songImportRepository.import(json).fold(
+                    onSuccess = { outcome ->
+                        logger.i(
+                            TAG,
+                            "歌曲目录就绪：${outcome.importedCount} 首（替换=${outcome.replaced}）",
+                        )
+                    },
+                    onFailure = { e -> logger.e(TAG, "歌曲目录导入失败（安全错误）", e) },
+                )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logger.w(TAG, "歌曲目录加载失败", e)
+            }
+        }
     }
 
     /**
