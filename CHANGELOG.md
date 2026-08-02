@@ -67,6 +67,12 @@
   - BUG-018：联网歌曲包——HTTPS 下载 JSON（15s 超时/5MB 上限/零新依赖）→ 复用导入管线（版本事务替换）；设置页歌曲包区块；启动内置导入仅空库执行；示例周杰伦包（song-packs/）。
   - 验证：MockWebServer/导入器测试 + 模拟器端到端（下载→校验→"导入成功：8 首（替换原曲库）"）。
 
+- **BUG-019/020/021 录音链路根治（2026-08-01，子代理评审 + 复现测试）**
+  - BUG-019（P1）：录音机从未启动（recorder.start 无调用方）→ 零音频帧空 WAV；runner.start 补调用 + 失败映射 + 落盘收尾归采集协程（消除并发写文件竞态）。
+  - BUG-020（P1）：FlowSessionViewModel 实际未 Activity 作用域（每路由独立实例 → wavFile 跨页不可见）；二次录音被 IDLE 门禁拦截 + 终态回放误触发；已修复（hiltViewModel(Activity) + 重启门禁放宽 + 防回放守卫）。
+  - BUG-021（P2）：重试 popUpTo 失效致重复压栈 + 准备页自动前进弹回；统一 popUpTo(PREPARE){inclusive} + 授权后显式按钮。
+  - 验证：RecordingHandoffTest（真实 runner 链路：有效 WAV + 二次重启）+ 仪器测试 24/24 + release 端到端冒烟（录音→停止→质量页正常，模拟器无音频正确报"没有检测到声音"）。
+
 ### 安全（Security）
 
 - 新增 `PRIVACY.md` 初稿：明确 MVP 无网络权限、无后端、无 API Key；不上传原始音频与声音特征；录音分析完成后删除（FR-PRIV-1/3）；删除流程全链路可测（FR-PRIV-5）。M9.1 数据清单落地后定稿。

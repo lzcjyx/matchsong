@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +21,7 @@ import matchsong.core.audio.algorithm.VolumeMeter
 import matchsong.core.audio.algorithm.throttledVolume
 import matchsong.core.audio.api.AudioRecorder
 import matchsong.core.audio.api.RecordingConfig
+import matchsong.core.common.error.AppError
 import matchsong.core.common.log.Logger
 import matchsong.core.common.result.OperationResult
 import matchsong.domain.recording.RecordingEvent
@@ -81,8 +83,20 @@ class RecordingSessionRunner(
         const val THROTTLE_MS = 100L // 音量节流 ≤10Hz（FR-REC-4）
     }
 
+    /** BUG-020：停止请求标记（倒计时内停止 → 按取消处理，不产生空录音）。 */
+    @Volatile
+    private var stopRequested = false
+
     fun start(context: Context) {
-        if (stateMachine.state != RecordingState.IDLE) return
+        // BUG-020：允许从 COMPLETED/FAILED 重启（此前仅 IDLE → 二次录音被静默拦截）
+        if (stateMachine.state !in setOf(RecordingState.IDLE, RecordingState.COMPLETED, RecordingState.FAILED)) {
+            return
+        }
+        stopRequested = false
+        lastWavFile = null
+        sessionId = ""
+        pcmFile = null
+        pcmSink = null
         config = RecordingConfig() // M3.3-1 细化后从配置源读取
         stateMachine.onEvent(RecordingEvent.Start)
         _stateFlow.value = RecordingState.PREPARING
@@ -94,6 +108,18 @@ class RecordingSessionRunner(
             _stateFlow.value = RecordingState.FAILED
             focusManager?.abandonFocus()
             return
+        }
+
+        // BUG-019 核心修复：必须先启动录音机（此前从未调用 recorder.start →
+        // AndroidAudioRecorder.activeSession 为 null → frames 流零帧 → 空 WAV）
+        when (val started = recorder.start(config)) {
+            is OperationResult.Success -> Unit
+            is OperationResult.Failure -> {
+                stateMachine.onEvent(RecordingEvent.Error(started.error.toFailureReason()))
+                _stateFlow.value = RecordingState.FAILED
+                focusManager?.abandonFocus()
+                return
+            }
         }
 
         sessionJob =
@@ -108,16 +134,56 @@ class RecordingSessionRunner(
                     _stateFlow.value = stateMachine.state
                     _countdownSeconds.value = stateMachine.countdownRemaining
                 }
+                if (stopRequested) {
+                    // 倒计时内被停止：按取消处理，不产生空录音
+                    stateMachine.onEvent(RecordingEvent.Error(RecordingFailureReason.CANCELED))
+                    _stateFlow.value = RecordingState.FAILED
+                    cleanupSessionFiles()
+                    focusManager?.abandonFocus()
+                    return@launch
+                }
                 // 开始采集
                 stateMachine.onEvent(RecordingEvent.RecordingStarted)
                 _stateFlow.value = RecordingState.RECORDING
                 startTimeMs = System.currentTimeMillis()
-                collectFrames()
-                // 自动停止 20s（ACC-4）
-                delay(config.maxDurationMs - 3_000)
-                stop(interrupted = false)
+                coroutineScope {
+                    // 自动停止计时器与采集并行（BUG-020：旧实现先等采集结束再 delay，
+                    // 且 stop() 在调用线程 finalize 可能与采集协程并发写文件）
+                    val autoStop =
+                        launch {
+                            delay(config.maxDurationMs - 3_000)
+                            recorder.stop()
+                        }
+                    try {
+                        collectFrames()
+                    } finally {
+                        autoStop.cancel()
+                        // 落盘收尾由采集协程完成，COMPLETED 只在其后发射（竞态根治）
+                        closePcmSink()
+                        finalizeWav()
+                    }
+                }
+                stateMachine.onEvent(RecordingEvent.Stopped)
+                _stateFlow.value = RecordingState.COMPLETED
+                focusManager?.abandonFocus()
             }
     }
+
+    /** 录音机启动失败（AppError）→ 录音失败原因（状态机消费）。 */
+    private fun matchsong.core.common.error.AppError.toFailureReason(): RecordingFailureReason =
+        when (this) {
+            is AppError.RecordingError ->
+                when (reason) {
+                    AppError.RecordingError.Reason.InitFailed -> RecordingFailureReason.INIT_FAILED
+                    AppError.RecordingError.Reason.MicUnavailable -> RecordingFailureReason.MIC_UNAVAILABLE
+                    AppError.RecordingError.Reason.MicBusy -> RecordingFailureReason.MIC_BUSY
+                    AppError.RecordingError.Reason.ReadError -> RecordingFailureReason.READ_ERROR
+                    AppError.RecordingError.Reason.PermissionRevoked -> RecordingFailureReason.PERMISSION_REVOKED
+                    AppError.RecordingError.Reason.Unknown -> RecordingFailureReason.UNKNOWN
+                }
+
+            else -> RecordingFailureReason.UNKNOWN
+        }
 
     /** 复用 PCM 编码缓冲（M10.2：避免逐样本 writeByte 与重复分配，PLAN §16.2 顺序 1-2）。 */
     private var pcmEncodeBuffer: ByteArray = ByteArray(0)
@@ -147,7 +213,6 @@ class RecordingSessionRunner(
             .map { chunk -> volumeMeter.computeVolume(chunk) }
             .throttledVolume(THROTTLE_MS)
             .collect { level -> _volumeFlow.tryEmit(level) }
-        closePcmSink()
     }
 
     /** 创建会话 PCM 文件（cacheDir/recordings/{sessionId}.pcm）。 */
@@ -204,28 +269,19 @@ class RecordingSessionRunner(
     }
 
     fun stop(interrupted: Boolean) {
-        if (stateMachine.state == RecordingState.IDLE ||
-            stateMachine.state == RecordingState.COMPLETED ||
-            stateMachine.state == RecordingState.FAILED
-        ) {
+        if (stateMachine.state !in setOf(RecordingState.COUNTDOWN, RecordingState.RECORDING)) {
             return
         }
+        stopRequested = true
         if (interrupted) {
             stateMachine.onEvent(RecordingEvent.FocusLost)
         } else {
             stateMachine.onEvent(RecordingEvent.UserStop)
         }
         _stateFlow.value = RecordingState.STOPPING
+        // 结束采集流 → 采集协程收尾（closePcmSink + finalizeWav）→ 自行发射 COMPLETED；
+        // 本方法不再直接 finalize（BUG-020：避免与采集协程并发写文件/竞态）
         recorder.stop()
-        sessionJob?.cancel()
-        // BUG-014 修复：先落盘（PCM 关闭 + WAV 封装）再宣布 COMPLETED——
-        // 原顺序在 COMPLETED 发射后才 finalizeWav，UI 可能在 lastWavFile 就绪前
-        // 读取到 null 并跳转 → 质量页白屏（真机复现）
-        closePcmSink()
-        finalizeWav()
-        stateMachine.onEvent(RecordingEvent.Stopped)
-        _stateFlow.value = RecordingState.COMPLETED
-        focusManager?.abandonFocus()
     }
 
     private fun onFocusLost() {

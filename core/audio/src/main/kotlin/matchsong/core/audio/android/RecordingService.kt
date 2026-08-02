@@ -37,9 +37,12 @@ class RecordingService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
-        // 首次启动：开始录音会话（若尚未开始）
+        // 首次启动：开始录音会话（若尚未开始）；BUG-020：允许 COMPLETED/FAILED 后重启
         RecordingSessionRunner.instance?.let { runner ->
-            if (runner.stateMachine.state == matchsong.domain.recording.RecordingState.IDLE) {
+            if (runner.stateMachine.state == matchsong.domain.recording.RecordingState.IDLE ||
+                runner.stateMachine.state == matchsong.domain.recording.RecordingState.COMPLETED ||
+                runner.stateMachine.state == matchsong.domain.recording.RecordingState.FAILED
+            ) {
                 runner.start(this)
             }
         }

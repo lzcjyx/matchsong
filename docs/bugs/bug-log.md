@@ -72,6 +72,9 @@ App 版本:        versionName (versionCode)
 | BUG-016 | 内置曲库从未在运行时导入——真机推荐必然空结果 | P1 | 全部 | 0.1.0 | FIXED | 真机修复 | 数据集移入 assets + Application 启动幂等导入；SongCatalogSeedTest 回归（真实 DB 50 首） |
 | BUG-017 | 停止录音后必现"录音文件不可用"（服务销毁竞态） | P1 | 真机 | 0.1.0 | FIXED | 真机修复 | release() 置空 instance+删文件（M9.2 误加）；改幂等收尾，文件删除归分析流程 |
 | BUG-018 | 曲库仅 50 首且无法扩展 | P2 | 全部 | 0.1.0 | FIXED | 真机修复 | 联网歌曲包：HTTPS 下载 JSON → 复用导入管线（版本事务替换）；设置页管理 + 示例周杰伦包 |
+| BUG-019 | 录音机从未启动（recorder.start 无调用）→ 空 WAV → 质量/后续全断 | P1 | 全部 | 0.1.0 | FIXED | 真机修复 | runner.start 调用 recorder.start；失败映射 FAILED；WAV 收尾归采集协程 |
+| BUG-020 | FlowSessionViewModel 未 Activity 作用域 + 二次录音被重启门禁拦截 | P1 | 全部 | 0.1.0 | FIXED | 真机修复 | hiltViewModel(Activity) 单实例跨页；start() 允许 COMPLETED/FAILED 重启；防终态回放 |
+| BUG-021 | 返回栈污染（重录重复压栈 + 准备页自动前进弹回） | P2 | 全部 | 0.1.0 | FIXED | 真机修复 | 重试统一 popUpTo(PREPARE){inclusive}；准备页授权后改为显式按钮 |
 
 ## 5. Bug 明细
 
@@ -181,3 +184,30 @@ App 版本:        versionName (versionCode)
 14. 检查隐私和性能影响；
 15. 更新 Bug 日志；
 16. 必要时更新 SPEC、PLAN 或 ADR。
+
+### BUG-019 录音机从未启动（空录音）
+
+- **严重级别：** P1（录音功能完全失效——零音频帧 → 空 WAV → 下游全断）
+- **状态：** FIXED（2026-08-01，子代理评审 + 复现测试定位）
+- **复现：** 真机录音结束 → 质量页"录音文件不可用"或质量失败；任何设备一致
+- **根因：** `RecordingSessionRunner` 全链路**从未调用 `AudioRecorder.start(config)`**——`AndroidAudioRecorder.frames` 冷流在 `activeSession == null` 时直接空完成 → PCM 空文件 → 44 字节空 WAV → 质量分析 0 帧；此前 M3 验收仅验证 UI 状态流，未验证真实采集（模拟器也从未真正采过音）
+- **修复：** ① runner.start() 同步调用 `recorder.start(config)`，失败映射 `RecordingFailureReason` → FAILED；② 落盘收尾（closePcmSink + finalizeWav）移入采集协程 finally——COMPLETED 只在其后发射（消除双线程并发写文件竞态）；③ 自动停止计时器与采集并行（原实现先等采集结束再 delay）
+- **测试：** `RecordingHandoffTest`（真实 runner + Fake 录音机 + 真实文件管理）：首次会话产出 >44 字节有效 WAV；二次会话可重启。修复前 `wav.length() > 44` 断言失败（复现）
+
+### BUG-020 FlowSessionViewModel 未 Activity 作用域 + 重启门禁
+
+- **严重级别：** P1
+- **状态：** FIXED（2026-08-01）
+- **复现：** 首次录音结束必现"录音文件不可用"；失败后再次开始测试直接报错（不录音）
+- **根因：** ① 每个路由 `hiltViewModel()` 作用域 = 各自 back stack entry——RECORDING 写入的 `wavFile` 对 QUALITY_RESULT 的新实例不可见（M8 声称的"Activity 作用域"从未实现）→ 防御态必触发；② 单例 runner 停在 COMPLETED：`start()` 与 `RecordingService` 均以 `state == IDLE` 为门禁 → 二次录音被静默拦截，而 UI 回放残留 COMPLETED → 立即触发 onFinished → 空 WAV 报错
+- **修复：** ① `hiltViewModel(Activity)`（ContextWrapper 链解包取 ComponentActivity）单实例跨页共享；② `start()` 允许 IDLE/COMPLETED/FAILED 重启并重置会话状态；服务门禁同步放宽；③ RecordingScreen 增加"先见非终态再放行"守卫（防终态回放误触发 onFinished）；④ 倒计时内停止按取消处理（CANCELED → FAILED，不产生空录音）
+- **测试：** RecordingHandoffTest.secondSessionCanRestart（修复前失败）；仪器测试 24/24
+
+### BUG-021 返回栈污染
+
+- **严重级别：** P2
+- **状态：** FIXED（2026-08-01）
+- **复现：** 手机返回键需多次按压才能回主界面；返回后自动弹回出错页
+- **根因：** 重试路径 `popUpTo(RECORDING)`——RECORDING 已被 pop 后为 no-op → 重复压栈 PREPARE；PrepareScreen 在 GRANTED 下每次重进自动前进 → 后退又弹回
+- **修复：** 所有重试统一 `popUpTo(PREPARE) { inclusive = true }`（清空整个录音流程栈）；准备页授权后改为显式"开始录音"按钮（不再自动前进）
+- **测试：** 仪器测试 24/24（导航/稳定性套件）+ release 端到端冒烟

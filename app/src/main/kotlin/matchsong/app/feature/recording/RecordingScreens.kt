@@ -22,6 +22,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -111,7 +114,12 @@ fun PrepareScreen(
         }
 
         PermissionState.GRANTED -> {
-            LaunchedEffect(permissionState) { onStartRecording() }
+            // BUG-020：不再自动前进（原 LaunchedEffect 在每次重进 GRANTED 时自动跳录音页，
+            // 与返回键形成"后退又弹回"循环）；改为显式按钮：点击开始录音 → 导航录音页
+            PrepareContent(
+                onStart = onStartRecording,
+                hint = "麦克风已授权，点击开始录音",
+            )
         }
     }
 }
@@ -155,9 +163,19 @@ fun RecordingScreen(
     val countdownSeconds by viewModel.countdownSeconds.collectAsState()
     val context = LocalContext.current
 
-    // 录音完成后跳转（Completed → 质量结果页）
+    // BUG-020：仅在本页会话内到达 COMPLETED 时才跳转（防止重进时回放上一次的
+    // 终态 COMPLETED 触发 onFinished → 空 WAV 报错；runner.start 已重置为 PREPARING，
+    // 此处再设一道"先见非终态再放行"的守卫）
+    var completedArmed by remember { mutableStateOf(false) }
     LaunchedEffect(recordingState) {
-        if (recordingState == RecordingState.COMPLETED) onFinished()
+        when (recordingState) {
+            RecordingState.PREPARING,
+            RecordingState.COUNTDOWN,
+            RecordingState.RECORDING,
+            -> completedArmed = true
+            RecordingState.COMPLETED -> if (completedArmed) onFinished()
+            else -> Unit
+        }
     }
 
     Column(

@@ -1,5 +1,8 @@
 package matchsong.app.navigation
 
+import android.content.Context
+import android.content.ContextWrapper
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,6 +14,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -41,12 +45,31 @@ import matchsong.app.feature.voice.VoiceResultScreen
  * Prepare→Recording→QualityResult→Analyzing→VoiceResult→RecommendationList，
  * "重新录制"= popUpTo(Prepare)。
  */
+
+private tailrec fun Context.findActivity(): ComponentActivity? =
+    when (this) {
+        is ComponentActivity -> this
+        is ContextWrapper -> baseContext.findActivity()
+        else -> null
+    }
+
 @Suppress("LongMethod") // 路由注册为声明式清单，逐路由拆分会破坏可读性（M2.1-1 决策）
 @Composable
 fun AppNavHost(
     navController: NavHostController,
     startDestination: String,
 ) {
+    // BUG-019 核心修复：FlowSessionViewModel 必须 Activity 作用域（单一实例跨页共享）——
+    // 此前每路由各自 hiltViewModel()（作用域=各自 back stack entry），RECORDING 写入的
+    // wavFile 对 QUALITY_RESULT 的新实例不可见 → 永远"录音文件不可用"。
+    // 注意：NavHost 内的 LocalContext 是 destination 的 ContextWrapper，需解包取 Activity。
+    val activity = LocalContext.current.findActivity()
+    val flowSession: matchsong.app.feature.flow.FlowSessionViewModel =
+        if (activity != null) {
+            hiltViewModel(activity)
+        } else {
+            hiltViewModel()
+        }
     NavHost(
         navController = navController,
         startDestination = startDestination,
@@ -88,7 +111,6 @@ fun AppNavHost(
         }
         composable(Routes.PREPARE) { PrepareScreen(onStartRecording = { navController.navigate(Routes.RECORDING) }) }
         composable(Routes.RECORDING) {
-            val flowSession: matchsong.app.feature.flow.FlowSessionViewModel = hiltViewModel()
             val runner = matchsong.core.audio.android.RecordingSessionRunner.instance
             RecordingScreen(
                 onFinished = {
@@ -99,7 +121,6 @@ fun AppNavHost(
             )
         }
         composable(Routes.QUALITY_RESULT) {
-            val flowSession: matchsong.app.feature.flow.FlowSessionViewModel = hiltViewModel()
             val qualityVm: QualityResultViewModel = hiltViewModel()
             val qualityState by qualityVm.state.collectAsState()
             val wavFile by flowSession.wavFile.collectAsState()
@@ -109,7 +130,7 @@ fun AppNavHost(
                     message = "录音文件不可用，请重新录制",
                     onRetry = {
                         flowSession.reset()
-                        navController.navigate(Routes.PREPARE) { popUpTo(Routes.RECORDING) }
+                        navController.navigate(Routes.PREPARE) { popUpTo(Routes.PREPARE) { inclusive = true } }
                     },
                 )
                 return@composable
@@ -139,7 +160,7 @@ fun AppNavHost(
                             // M9.2：重录前清理本会话录音文件（FR-PRIV-1）
                             matchsong.core.audio.android.RecordingSessionRunner.instance?.cleanupSessionFiles()
                             flowSession.reset()
-                            navController.navigate(Routes.PREPARE) { popUpTo(Routes.RECORDING) }
+                            navController.navigate(Routes.PREPARE) { popUpTo(Routes.PREPARE) { inclusive = true } }
                         },
                     )
                 }
@@ -149,14 +170,13 @@ fun AppNavHost(
                         onRetry = {
                             matchsong.core.audio.android.RecordingSessionRunner.instance?.cleanupSessionFiles()
                             flowSession.reset()
-                            navController.navigate(Routes.PREPARE) { popUpTo(Routes.RECORDING) }
+                            navController.navigate(Routes.PREPARE) { popUpTo(Routes.PREPARE) { inclusive = true } }
                         },
                     )
                 QualityResultViewModel.UiState.Idle -> Unit
             }
         }
         composable(Routes.ANALYZING) {
-            val flowSession: matchsong.app.feature.flow.FlowSessionViewModel = hiltViewModel()
             val analyzingVm: AnalyzingViewModel = hiltViewModel()
             val analyzingState by analyzingVm.state.collectAsState()
             val wavFile by flowSession.wavFile.collectAsState()
@@ -184,7 +204,6 @@ fun AppNavHost(
             )
         }
         composable(Routes.VOICE_RESULT) {
-            val flowSession: matchsong.app.feature.flow.FlowSessionViewModel = hiltViewModel()
             val analysisResult by flowSession.analysisResult.collectAsState()
             VoiceResultScreen(
                 result = analysisResult,
@@ -192,12 +211,11 @@ fun AppNavHost(
                 onRetry = {
                     matchsong.core.audio.android.RecordingSessionRunner.instance?.cleanupSessionFiles()
                     flowSession.reset()
-                    navController.navigate(Routes.PREPARE) { popUpTo(Routes.RECORDING) }
+                    navController.navigate(Routes.PREPARE) { popUpTo(Routes.PREPARE) { inclusive = true } }
                 },
             )
         }
         composable(Routes.RECOMMENDATION_LIST) {
-            val flowSession: matchsong.app.feature.flow.FlowSessionViewModel = hiltViewModel()
             val recVm: matchsong.app.feature.recommendation.RecommendationListViewModel = hiltViewModel()
             val recState by recVm.state.collectAsState()
             val analysisResult by flowSession.analysisResult.collectAsState()
@@ -231,7 +249,7 @@ fun AppNavHost(
                 onRetry = {
                     matchsong.core.audio.android.RecordingSessionRunner.instance?.cleanupSessionFiles()
                     flowSession.reset()
-                    navController.navigate(Routes.PREPARE) { popUpTo(Routes.RECORDING) }
+                    navController.navigate(Routes.PREPARE) { popUpTo(Routes.PREPARE) { inclusive = true } }
                 },
             )
         }

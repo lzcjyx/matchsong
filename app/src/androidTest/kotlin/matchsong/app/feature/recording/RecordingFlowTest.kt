@@ -53,8 +53,15 @@ class RecordingFlowTest {
         composeRule.onNodeWithText("开始测试").performClick()
         composeRule.onNodeWithText("录音准备").assertIsDisplayed()
         composeRule.onNodeWithText("开始录音").performClick()
-        // 权限已授予 → 导航到录音页（倒计时阶段；3s 倒计时由真实 delay 驱动，测试时钟不推进）
-        composeRule.waitUntil(5_000) {
+        // BUG-020：授权后不再自动前进——等待 GRANTED 分支（提示"麦克风已授权"），
+        // 再点一次按钮显式进入录音页。倒计时（BUG-013 真实 3→2→1）与录音中均在真机
+        // 渲染；本模拟器无音频输入但录音机可初始化（采集为静音）。权限回调在测试环境
+        // 偶有延迟，等待窗口放宽。
+        composeRule.waitUntil(15_000) {
+            composeRule.onAllNodesWithText("麦克风已授权，点击开始录音").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithText("开始录音").performClick()
+        composeRule.waitUntil(15_000) {
             composeRule.onAllNodesWithText("倒计时 3…").fetchSemanticsNodes().isNotEmpty() ||
                 composeRule.onAllNodesWithText("录音中…").fetchSemanticsNodes().isNotEmpty()
         }
