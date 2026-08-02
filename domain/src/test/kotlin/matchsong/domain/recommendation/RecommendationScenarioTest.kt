@@ -61,6 +61,18 @@ class RecommendationScenarioTest {
     }
 
     @Test
+    fun `partially overlapping song accepted via max downshift`() {
+        // BUG-023：零超幅不可达（歌高 78，需降 7 半音超 maxShift=6）→ 回退部分重叠：
+        // 最小降幅优先枚举：-3 → [52,75]，高 75 ≤ 上限 75 ✓，与用户 [48,69] 重叠
+        // 17/23 ≈ 0.74 ≥ 0.6 → 推荐（-6 也满足但非最小降幅，规则取最小）
+        val songs = listOf(RecommendationFixtures.song(songId = "s-partial", lowest = 55, highest = 78))
+        val result = engine.recommend(RecommendationFixtures.analysis(), songs, settings)
+        val item = result.recommendations.firstOrNull { it.song.songId == "s-partial" }
+        assertNotNull(item, "部分重叠应被推荐（BUG-023）")
+        assertEquals(-3, item?.keyShiftSemitones, "应取满足条件的最小降幅 -3")
+    }
+
+    @Test
     fun `language mismatch filtered`() {
         val songs = listOf(RecommendationFixtures.song(songId = "s-en", language = "en"))
         val result = engine.recommend(RecommendationFixtures.analysis(), songs, settings)

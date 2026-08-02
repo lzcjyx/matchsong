@@ -72,9 +72,9 @@ class RecordingViewModel
                 PermissionEvent.PermissionResult(granted, shouldShowRationale),
             )
             _permissionState.value = permissionMachine.state
-            if (granted) {
-                startRecording()
-            }
+            // BUG-022：不再在授权回调里启动录音——会话由录音页进入时启动（RecordingScreen
+            // LaunchedEffect → startRecording），避免"授权即开录"导致会话在准备页就跑完
+            // （用户进入录音页时已 COMPLETED → 显示"完成"卡死）
         }
 
         /** 从设置返回（onResume 注入，ACC-3）。 */

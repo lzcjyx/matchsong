@@ -38,7 +38,7 @@ class SongCatalogSeedTest {
             }
 
         assertTrue("曲库应在启动后被导入（实际 $count 首）", count > 0)
-        // MVP 数据集规模 50 首（zh 30 / en 20，M6.5）
-        assertEquals("数据集规模应为 50 首", 50, count)
+        // MVP 数据集规模 52 首（zh 32 / en 20，BUG-023 扩充 2 首男调歌曲后）
+        assertEquals("数据集规模应为 52 首", 52, count)
     }
 }

@@ -75,6 +75,8 @@ App 版本:        versionName (versionCode)
 | BUG-019 | 录音机从未启动（recorder.start 无调用）→ 空 WAV → 质量/后续全断 | P1 | 全部 | 0.1.0 | FIXED | 真机修复 | runner.start 调用 recorder.start；失败映射 FAILED；WAV 收尾归采集协程 |
 | BUG-020 | FlowSessionViewModel 未 Activity 作用域 + 二次录音被重启门禁拦截 | P1 | 全部 | 0.1.0 | FIXED | 真机修复 | hiltViewModel(Activity) 单实例跨页；start() 允许 COMPLETED/FAILED 重启；防终态回放 |
 | BUG-021 | 返回栈污染（重录重复压栈 + 准备页自动前进弹回） | P2 | 全部 | 0.1.0 | FIXED | 真机修复 | 重试统一 popUpTo(PREPARE){inclusive}；准备页授权后改为显式按钮 |
+| BUG-022 | 成功后返回残留质量页误报 + 二次测试直接"完成"卡死 + 历史记录为空 | P1 | 全部 | 0.1.0 | FIXED | 真机修复 | 分析后清空流程栈；会话改录音页进入时启动；RecordAnalysisUseCase 接线（零调用方） |
+| BUG-023 | 推荐频繁"没有歌曲达到最低匹配分数"（典型男声全空） | P1 | 全部 | 0.1.0 | FIXED | 真机修复 | KeyShift 改两级匹配（零超幅→部分重叠 0.6/4 半音）；数据集补男调歌 + 升版 1.1.0（52 首） |
 
 ## 5. Bug 明细
 
@@ -211,3 +213,22 @@ App 版本:        versionName (versionCode)
 - **根因：** 重试路径 `popUpTo(RECORDING)`——RECORDING 已被 pop 后为 no-op → 重复压栈 PREPARE；PrepareScreen 在 GRANTED 下每次重进自动前进 → 后退又弹回
 - **修复：** 所有重试统一 `popUpTo(PREPARE) { inclusive = true }`（清空整个录音流程栈）；准备页授权后改为显式"开始录音"按钮（不再自动前进）
 - **测试：** 仪器测试 24/24（导航/稳定性套件）+ release 端到端冒烟
+
+### BUG-022 成功后返回栈残留 + 会话时序 + 历史记录空
+
+- **严重级别：** P1
+- **状态：** FIXED（2026-08-01，子代理调查 + 复现）
+- **症状：** ① 成功测试后返回 → 回到测试环节并显示"录音文件不可用"；② 成功后再点开始测试 → 直接显示"完成"卡死；③ 测试成功后历史记录为空
+- **根因：** ① 分析完成后 `navigate(VOICE_RESULT) { popUpTo(QUALITY_RESULT) }` 未弹出 QUALITY_RESULT（只弹 ANALYZING）→ 返回键落回残留的质量页，其 wavFile 已被分析后置空 → 误报；② 会话在**权限回调**时就启动（后台跑完），用户进入录音页时已是 COMPLETED + 防回放守卫未放行 → 显示"完成"卡死；③ `RecordAnalysisUseCase` 全代码库**零调用方**（Hilt 绑定是死的）→ analysis_history 表从未写入
+- **修复：** ① ANALYZING→VOICE_RESULT 改 `popUpTo(PREPARE){inclusive=true}`（清空整个流程栈，返回直达主菜单）；② 会话启动移到录音页进入时（RecordingScreen LaunchedEffect startRecording），权限回调只更新状态；③ `RecommendationListViewModel.load()` 注入并调用 `RecordAnalysisUseCase`（无论推荐是否为空都记录，FR-HX-1）
+- **测试：** 仪器 24/24（含 RecordingFlowTest 两段式授权+倒计时断言）；历史保存由既有 RecordAnalysisUseCaseTest + Room 测试覆盖
+
+### BUG-023 推荐频繁"没有歌曲达到最低匹配分数"
+
+- **严重级别：** P1（主功能可用性）
+- **状态：** FIXED（2026-08-01，子代理数据计算定位）
+- **症状：** 多次测试只有一次推荐成功；典型男声几乎全空
+- **根因：** `KeyShiftEvaluation` 采用**二进制全包含**判定（变调后整曲音域必须落入用户音域±2）——对偏女调数据集（32 首中文歌仅少数高音 ≤65），典型男声稳定音域 48-60 时 **0 首**通过（计算验证）；评分阈值/候选过滤/语音门禁均非主因（语音门禁走另一条"数据不足"提示路径）
+- **修复：** ① 两级匹配：先零超幅（全包含，ACC-17 语义不变），再回退**部分重叠**（重叠比例 ≥0.6 且超幅 ≤4 半音，[推测] 配置 KeyShiftConfig）；② 数据集补 2 首男调中文歌（南山南/消愁，high 63/67）并升版 1.1.0（52 首）；③ 启动导入支持旧内置版本升级（1.0.0 → 1.1.0），用户歌曲包不受影响
+- **效果（实测计算）：** 男声 48-60：0 → **27/32 首**；男声 45-59：1 → 19/32；女声 52-66：30/32
+- **测试：** 新增"部分重叠最大降幅"场景用例；既有变调用例（ACC-17 降 2 半音）语义不变；全量回归绿

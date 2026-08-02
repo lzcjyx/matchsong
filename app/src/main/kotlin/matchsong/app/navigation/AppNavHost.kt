@@ -193,12 +193,15 @@ fun AppNavHost(
                     // M9.2/ACC-14：分析完成即删除原始音频（.pcm/.wav），仅保留派生特征与历史摘要
                     matchsong.core.audio.android.RecordingSessionRunner.instance?.cleanupSessionFiles()
                     flowSession.setWavFile(null)
-                    navController.navigate(Routes.VOICE_RESULT) { popUpTo(Routes.QUALITY_RESULT) }
+                    // BUG-022：分析完成 = 录音流程消费完毕——清空整个流程栈（PREPARE/RECORDING/
+                    // QUALITY_RESULT/ANALYZING），结果页返回键直达主菜单（原栈残留 QUALITY_RESULT，
+                    // 返回时其 wavFile 已置空 → 误报"录音文件不可用"）
+                    navController.navigate(Routes.VOICE_RESULT) { popUpTo(Routes.PREPARE) { inclusive = true } }
                 }
             }
             AnalyzingScreen(
                 onDone = {
-                    navController.navigate(Routes.VOICE_RESULT) { popUpTo(Routes.QUALITY_RESULT) }
+                    navController.navigate(Routes.VOICE_RESULT) { popUpTo(Routes.PREPARE) { inclusive = true } }
                 },
                 state = analyzingState,
             )

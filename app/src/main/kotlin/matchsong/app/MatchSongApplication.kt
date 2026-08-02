@@ -59,10 +59,14 @@ class MatchSongApplication : Application() {
     private fun ensureSongCatalog() {
         appScope.launch {
             try {
-                // BUG-018：仅空库时导入内置曲库——用户下载过歌曲包（版本差异）后尊重用户曲库，
-                // 避免启动时被内置包覆盖
-                if (songDao.count() > 0) {
-                    logger.d(TAG, "曲库非空，跳过内置导入")
+                // 仅空库或旧内置版本（1.0.0）时导入——BUG-018 后用户下载过歌曲包
+                // （版本差异）则尊重用户曲库；BUG-023 数据集扩至 56 首（版本 1.1.0）
+                // 时旧内置库需可升级
+                val storedVersions = songDao.getDataVersions().toSet()
+                val needsImport =
+                    songDao.count() == 0 || storedVersions == setOf(OLD_BUILTIN_DATA_VERSION)
+                if (!needsImport) {
+                    logger.d(TAG, "曲库非空且非旧内置版本，跳过内置导入")
                     return@launch
                 }
                 val json =
@@ -106,5 +110,8 @@ class MatchSongApplication : Application() {
 
     private companion object {
         const val TAG = "MatchSongApplication"
+
+        /** 旧内置曲库版本（BUG-023 升级判定：仅该版本可被内置新版本替换）。 */
+        const val OLD_BUILTIN_DATA_VERSION = "1.0.0"
     }
 }

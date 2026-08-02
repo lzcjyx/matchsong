@@ -152,7 +152,9 @@ private fun PrepareContent(
 
 /**
  * M3.6-2 录音页：倒计时 → 录音中（音量条/时长）→ 停止。
+ * BUG-022：会话在页面进入时启动（LaunchedEffect startRecording），授权回调不再触发录音。
  */
+@Suppress("LongMethod") // 录音页为声明式状态分支清单（七状态 × 各自 UI），拆散破坏可读性
 @Composable
 fun RecordingScreen(
     onFinished: () -> Unit,
@@ -162,6 +164,12 @@ fun RecordingScreen(
     val volume by viewModel.volume.collectAsState()
     val countdownSeconds by viewModel.countdownSeconds.collectAsState()
     val context = LocalContext.current
+
+    // BUG-022：录音会话在进入录音页时启动（而非权限回调时）——保证倒计时/录音
+    // 与用户看到的页面同步，避免会话提前跑完显示"完成"卡死
+    LaunchedEffect(Unit) {
+        viewModel.startRecording()
+    }
 
     // BUG-020：仅在本页会话内到达 COMPLETED 时才跳转（防止重进时回放上一次的
     // 终态 COMPLETED 触发 onFinished → 空 WAV 报错；runner.start 已重置为 PREPARING，
